@@ -6,7 +6,7 @@ no-autoupdate: true
 loglevel: debug # Increased log level for more details
 transport-loglevel: debug
 ingress:
-  - hostname: hello.vanillax.xyz
+  - hostname: hello.mattshan.dev
     service: hello_world
     originRequest:
       # Add header logging with log-headers flag
@@ -26,11 +26,11 @@ ingress:
         - name: X-Forwarded-For
         - name: Accept-Language
         - name: User-Agent
-  - hostname: "*.vanillax.xyz"
+  - hostname: "*.mattshan.dev"
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       noTLSVerify: true
-      originServerName: "*.vanillax.xyz"
+      originServerName: "*.mattshan.dev"
       logHeaders: true
       headers:
         - name: CF-Connecting-IP
@@ -55,11 +55,11 @@ ingress:
         - name: CF-Bot-Score
         - name: CF-Challenge
         - name: CF-Bot-Management-Tag
-  - hostname: vanillax.xyz
+  - hostname: mattshan.dev
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       noTLSVerify: true
-      originServerName: vanillax.xyz
+      originServerName: mattshan.dev
       logHeaders: true
       headers:
         - name: CF-Connecting-IP

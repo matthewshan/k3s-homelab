@@ -8,7 +8,7 @@ spec:
     - name: gateway-internal
       namespace: gateway
   hostnames:
-    - prometheus.vanillax.xyz
+    - prometheus.mattshan.dev
   rules:
     - matches:
         - path:

@@ -9,7 +9,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - "it-tools.vanillax.xyz"
+    - "it-tools.mattshan.dev"
   rules:
     - matches:
         - path:

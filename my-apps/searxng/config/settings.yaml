@@ -1,7 +1,7 @@
 use_default_settings: true
 
 server:
-    base_url: 'https://search.vanillax.xyz'  # Remove trailing slash
+    base_url: 'https://search.mattshan.dev'  # Remove trailing slash
     secret_key: "${SEARXNG_SECRET_KEY}"  # Use from secret
     bind_address: "0.0.0.0"
     port: 8080  # Match with deployment port
@@ -69,7 +69,7 @@ hostnames:
         - (.*\.)?askubuntu.com$
         - (.*\.)?superuser.com$
     replace:
-        (www\.)?reddit\.com$: libreddit.vanillax.xyz
+        (www\.)?reddit\.com$: libreddit.mattshan.dev
 
 engines:
     - name: google

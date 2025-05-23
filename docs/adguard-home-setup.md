@@ -41,17 +41,17 @@ dns:
     - 0.0.0.0
   port: 53
   rewrites:
-    - domain: homepage.vanillax.xyz
+    - domain: homepage.mattshan.dev
       answer: 192.168.10.21
-    - domain: argocd.vanillax.xyz
+    - domain: argocd.mattshan.dev
       answer: 192.168.10.21
-    - domain: intgw.vanillax.xyz
+    - domain: intgw.mattshan.dev
       answer: 192.168.10.21
-    - domain: nginx.vanillax.xyz
+    - domain: nginx.mattshan.dev
       answer: 192.168.10.21
-    - domain: test.vanillax.xyz
+    - domain: test.mattshan.dev
       answer: 192.168.10.21
-    - domain: extgw.vanillax.xyz
+    - domain: extgw.mattshan.dev
       answer: 192.168.10.22
   upstream_dns:
     - https://1.1.1.1/dns-query
@@ -97,7 +97,7 @@ To verify your setup is working:
 1. Open a terminal/command prompt
 2. Try pinging an internal domain:
 ```bash
-ping homepage.vanillax.xyz
+ping homepage.mattshan.dev
 ```
 It should resolve to 192.168.10.21
 
