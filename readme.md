@@ -1,6 +1,12 @@
 🚀 Kubernetes Starter Kit
 =========================
 
+Tutorial Video
+
+[![Tutorial Walkthrough Video](https://img.youtube.com/vi/AY5mC5rDUcw/0.jpg)](https://youtu.be/AY5mC5rDUcw)
+
+
+
 > Modern GitOps deployment structure using Argo CD on Kubernetes
 
 This starter kit provides a production-ready foundation for deploying applications and infrastructure components using GitOps principles. Compatible with both Raspberry Pi and x86 systems.
@@ -42,6 +48,7 @@ graph TD
     subgraph "Argo CD Projects"
         IP[Infrastructure Project] --> IAS[Infrastructure ApplicationSet]
         AP[Applications Project] --> AAS[Applications ApplicationSet]
+        MP[Monitoring Project] --> MAS[Monitoring ApplicationSet]
     end
     
     subgraph "Infrastructure Components"
@@ -56,6 +63,13 @@ graph TD
         S --> OpenEBS
         
         C --> CertManager
+    end
+    
+    subgraph "Monitoring Stack"
+        MAS --> Prometheus
+        MAS --> Grafana
+        MAS --> AlertManager
+        MAS --> NodeExporter
     end
     
     subgraph "User Applications"
@@ -107,7 +121,7 @@ echo -e "xt_socket\niptable_raw" | sudo tee /etc/modules-load.d/cilium.conf
 export SETUP_NODEIP=192.168.10.202  # Your node IP
 export SETUP_CLUSTERTOKEN=randomtokensecret1234  # Strong token
 
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0+k3s1" \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.2+k3s1" \
   INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
   --disable=flannel,local-storage,metrics-server,servicelb,traefik \
   --flannel-backend='none' \
@@ -167,7 +181,7 @@ rm cilium-linux-${CLI_ARCH}.tar.gz*
 helm repo add cilium https://helm.cilium.io && helm repo update
 helm install cilium cilium/cilium -n kube-system \
   -f infrastructure/networking/cilium/values.yaml \
-  --version 1.17.0-rc.2 \
+  --version 1.17.3 \
   --set operator.replicas=1
 
 # Validate installation
@@ -219,6 +233,31 @@ echo "Initial Argo CD password: $ARGO_PASS"
 Use a bcrypt hash generator tool (such as https://www.browserling.com/tools/bcrypt) to create a new bcrypt hash for the password.
 Update the argocd-secret secret with the new bcrypt hash.
 kubectl -n argocd patch secret argocd-secret -p '{"stringData": { "admin.password": "$2a$10$rgDBwhzr0ygDfH6scxkdddddx3cd612Cutw1Xu1X3a.kVrRq", "admin.passwordMtime": "'$(date +%FT%T%Z)'" }}'
+```
+
+### 5. Monitoring Setup (Prometheus Stack)
+```bash
+# The monitoring stack will be deployed automatically through Argo CD
+# It includes:
+# - Prometheus for metrics collection
+# - Grafana for visualization
+# - AlertManager for alerting
+# - Node Exporter for hardware/OS metrics
+# - Various Kubernetes exporters
+
+# Access URLs (after DNS/Gateway setup):
+# - Grafana: https://grafana.yourdomain.xyz
+#   Default credentials:
+#   Username: admin
+#   Password: prom-operator
+# - Prometheus: https://prometheus.yourdomain.xyz
+# - AlertManager: https://alertmanager.yourdomain.xyz
+
+# Storage:
+# The stack is configured with persistent storage using OpenEBS:
+# - Prometheus: 50Gi for time series data
+# - Grafana: 10Gi for dashboards and configurations
+# - AlertManager: 10Gi for alert history
 ```
 
 ## 🔒 Security Setup
@@ -308,6 +347,12 @@ kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
 
 # Wait for core services (5-30 mins for certs)
 kubectl wait --for=condition=Available deployment -l type=infrastructure --all-namespaces --timeout=1800s
+
+# Deploy monitoring stack
+kubectl apply -f monitoring/monitoring-components-appset.yaml -n argocd
+
+# Wait for monitoring components
+kubectl wait --for=condition=Available deployment -l type=monitoring --all-namespaces --timeout=600s
 
 # Deploy applications
 kubectl apply -f my-apps/myapplications-appset.yaml

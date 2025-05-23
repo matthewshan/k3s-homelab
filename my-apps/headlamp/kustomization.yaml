@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kube-system
+commonLabels:
+  app.kubernetes.io/name: headlamp
+  app.kubernetes.io/managed-by: argocd
+resources:
+  - namespace.yaml
+  - httproute.yaml
+  - serviceaccount.yaml
+  - token-secret.yaml
+helmCharts:
+  - name: headlamp
+    repo: https://headlamp-k8s.github.io/headlamp/
+    version: "0.29.1"
+    releaseName: headlamp
+    namespace: kube-system
+    includeCRDs: true
+    valuesFile: values.yaml 

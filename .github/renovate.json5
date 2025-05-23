@@ -11,26 +11,26 @@
     'argocd',
   ],
   argocd: {
-    fileMatch: [
-      '^infra/.+\\.yaml$',
-      '^apps/.+\\.yaml$',
+    managerFilePatterns: [
+      '/^infra/.+\\.yaml$/',
+      '/^apps/.+\\.yaml$/',
     ],
   },
   kubernetes: {
-    fileMatch: [
-      '^infra/.+\\.yaml$',
-      '^apps/.+\\.yaml$',
+    managerFilePatterns: [
+      '/^infra/.+\\.yaml$/',
+      '/^apps/.+\\.yaml$/',
     ],
   },
   'helm-values': {
-    fileMatch: [
-      '^infra/.+/values\\.yaml$',
-      '^apps/.+/values\\.yaml$',
+    managerFilePatterns: [
+      '/^infra/.+/values\\.yaml$/',
+      '/^apps/.+/values\\.yaml$/',
     ],
   },
   kustomize: {
-    fileMatch: [
-      '(^|/)kustomization\\.ya?ml$',
+    managerFilePatterns: [
+      '/(^|/)kustomization\\.ya?ml$/',
     ],
   },
   packageRules: [

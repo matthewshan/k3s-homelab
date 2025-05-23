@@ -1,38 +1,33 @@
-# my-apps/myapplications-appset.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: applications
+  name: monitoring-components
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   generators:
     - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-starter.git
+        repoURL: https://github.com/mitchross/k3s-argocd-starter
         revision: HEAD
         directories:
-          - path: my-apps/*
-          - path: my-apps/*/*
-          - exclude: true
-            path: my-apps/myapplications-appset.yaml
+          - path: monitoring/*
   template:
     metadata:
-      # Changed from 'app-{{path.basename}}' to just '{{path.basename}}'
       name: '{{path.basename}}'
       labels:
-        type: application
+        type: monitoring
     spec:
-      project: applications
+      project: monitoring
       source:
         plugin:
           name: kustomize-build-with-helm
-        repoURL: https://github.com/mitchross/k3s-argocd-starter.git
+        repoURL: https://github.com/mitchross/k3s-argocd-starter
         targetRevision: HEAD
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
+        namespace: monitoring
       syncPolicy:
         automated:
           prune: true

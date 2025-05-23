@@ -48,3 +48,28 @@ spec:
       description: Admin role for applications project
       policies:
         - p, proj:applications:admin, applications, *, applications/*, allow
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  description: Monitoring and observability components
+  sourceRepos:
+    - '*' # In production, specify exact repo URLs
+  destinations:
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+  # Allow all cluster resources like infrastructure since monitoring needs similar privileges
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  roles:
+    - name: admin
+      description: Admin role for monitoring project
+      policies:
+        - p, proj:monitoring:admin, applications, *, monitoring/*, allow
