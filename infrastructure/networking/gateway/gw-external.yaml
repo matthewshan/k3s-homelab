@@ -6,7 +6,7 @@ metadata:
 spec:
   addresses:
   - type: IPAddress
-    value: 192.168.10.25
+    value: 192.168.10.22
   gatewayClassName: cilium
   listeners:
     - name: http
