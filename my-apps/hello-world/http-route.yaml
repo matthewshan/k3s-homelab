@@ -9,7 +9,7 @@ spec:
       namespace: gateway
       sectionName: https       # Must match your Gateway's listeners[].name
   hostnames:
-  - "hello-world.vanillax.xyz"
+  - "hello-world.mattshan.dev"
   rules:
   - matches:
     - path:

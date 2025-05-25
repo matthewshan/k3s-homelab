@@ -8,7 +8,7 @@ spec:
   acme:
     # stage server: https://acme-staging-v02.api.letsencrypt.org/directory
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: youremail@vanillax.xyz
+    email: youremail@mattshan.dev
     privateKeySecretRef:
       name: cloudflare-key
     solvers:

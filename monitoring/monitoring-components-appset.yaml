@@ -8,7 +8,7 @@ metadata:
 spec:
   generators:
     - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-starter
+        repoURL: https://github.com/matthewshan/k3s-homelab
         revision: HEAD
         directories:
           - path: monitoring/*
@@ -22,7 +22,7 @@ spec:
       source:
         plugin:
           name: kustomize-build-with-helm
-        repoURL: https://github.com/mitchross/k3s-argocd-starter
+        repoURL: https://github.com/matthewshan/k3s-homelab
         targetRevision: HEAD
         path: '{{path}}'
       destination:
