@@ -28,3 +28,10 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    - name: minecraft-bedrock
+      protocol: UDP
+      port: 30000
+      allowedRoutes:
+        namespaces:
+          from: All
+

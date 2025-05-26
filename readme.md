@@ -236,6 +236,7 @@ kubectl -n argocd patch secret argocd-secret -p '{"stringData": { "admin.passwor
 ```
 
 ### 5. Monitoring Setup (Prometheus Stack)
+
 ```bash
 # The monitoring stack will be deployed automatically through Argo CD
 # It includes:
@@ -258,6 +259,23 @@ kubectl -n argocd patch secret argocd-secret -p '{"stringData": { "admin.passwor
 # - Prometheus: 50Gi for time series data
 # - Grafana: 10Gi for dashboards and configurations
 # - AlertManager: 10Gi for alert history
+```
+
+### 6. Install Longhorn
+
+```sh
+# Add longhorn repo, and update
+helm repo add longhorn https://charts.longhorn.io
+helm repo update
+
+# Create namespace
+kubectl create namespace longhorn-system
+
+# Install Longhorn
+helm install longhorn longhorn/longhorn --namespace longhorn-system
+
+# Check Status
+kubectl -n longhorn-system get pod
 ```
 
 ## 🔒 Security Setup
