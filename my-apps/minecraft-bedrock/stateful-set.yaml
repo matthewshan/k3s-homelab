@@ -42,14 +42,18 @@ spec:
           livenessProbe: *probe
           tty: true
           stdin: true
-  volumeClaimTemplates:
-    - apiVersion: v1
-      kind: PersistentVolumeClaim
-      metadata:
-        name: mc-data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
+    volumes:
+      - name: mc-data
+        persistentVolumeClaim:
+          claimName: mc-bedrock-pvc
+  # volumeClaimTemplates:
+  #   - apiVersion: v1
+  #     kind: PersistentVolumeClaim
+  #     metadata:
+  #       name: mc-data
+  #     spec:
+  #       accessModes:
+  #         - ReadWriteOnce
+  #       resources:
+  #         requests:
+  #           storage: 1Gi
