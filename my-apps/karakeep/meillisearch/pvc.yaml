@@ -1,15 +1,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: proxitok-cache-pvc
-  namespace: proxitok
-  labels:
-    app: proxitok
-    type: cache
+  name: meilisearch-pvc
+  namespace: karakeep
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
+      storage: 1Gi
   storageClassName: longhorn

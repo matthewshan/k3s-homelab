@@ -1,105 +1,32 @@
-🚀 Kubernetes Starter Kit
-=========================
+# K3s Home Lab
+This repo is originally a fork of Mitch Ross': https://github.com/mitchross/k3s-argocd-starter
 
-Tutorial Video
+Check out his video on YouTube on this K3s setup: https://www.youtube.com/watch?v=AY5mC5rDUcw
 
-[![Tutorial Walkthrough Video](https://img.youtube.com/vi/AY5mC5rDUcw/0.jpg)](https://youtu.be/AY5mC5rDUcw)
+## My Notes
 
+### Installing Longhorn
 
+Longhorn is a simple cluster storage solution
 
-> Modern GitOps deployment structure using Argo CD on Kubernetes
+```sh
+# Add longhorn repo, and update
+helm repo add longhorn https://charts.longhorn.io
+helm repo update
 
-This starter kit provides a production-ready foundation for deploying applications and infrastructure components using GitOps principles. Compatible with both Raspberry Pi and x86 systems.
+# Create namespace
+kubectl create namespace longhorn-system
 
-## 📋 Table of Contents
+# Install Longhorn
+helm install longhorn longhorn/longhorn --namespace longhorn-system
 
-- [Prerequisites](#-prerequisites)
-- [Architecture](#-architecture)
-- [Quick Start](#-quick-start)
-  - [System Setup](#1-system-setup)
-  - [K3s Installation](#2-k3s-installation)
-  - [Networking Setup](#3-networking-setup-cilium)
-  - [GitOps Setup](#4-gitops-setup-argo-cd-part-1-of-2)
-- [Security Setup](#-security-setup)
-  - [Cloudflare Integration](#cloudflare-integration)
-- [Verification](#-verification)
-- [Applications](#-included-applications)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Troubleshooting](#-troubleshooting)
-
-## 📋 Prerequisites
-
-- Kubernetes cluster (tested with K3s v1.32.0+k3s1)
-- Linux host (ARM or x86) with:
-  - Storage support (OpenEBS works with ZFS or standard directories)
-  - NFS and CIFS support (optional)
-  - Open-iSCSI
-- Cloudflare account (for DNS and Tunnel)
-- Local DNS setup (one of the following):
-  - Local DNS server ([AdGuard Home setup guide](docs/adguard-home-setup.md))
-  - Router with custom DNS capabilities (e.g., Firewalla)
-  - Ability to modify hosts file on all devices
-
-## 🏗️ Architecture
-
-```mermaid
-graph TD
-    subgraph "Argo CD Projects"
-        IP[Infrastructure Project] --> IAS[Infrastructure ApplicationSet]
-        AP[Applications Project] --> AAS[Applications ApplicationSet]
-        MP[Monitoring Project] --> MAS[Monitoring ApplicationSet]
-    end
-    
-    subgraph "Infrastructure Components"
-        IAS --> N[Networking]
-        IAS --> S[Storage]
-        IAS --> C[Controllers]
-        
-        N --> Cilium
-        N --> Cloudflared
-        N --> Gateway
-        
-        S --> OpenEBS
-        
-        C --> CertManager
-    end
-    
-    subgraph "Monitoring Stack"
-        MAS --> Prometheus
-        MAS --> Grafana
-        MAS --> AlertManager
-        MAS --> NodeExporter
-    end
-    
-    subgraph "User Applications"
-        AAS --> P[Privacy Apps]
-        AAS --> Web[Web Apps]
-        AAS --> Other[Other Apps]
-        
-        P --> ProxiTok
-        P --> SearXNG
-        P --> LibReddit
-        
-        Web --> Nginx
-        Web --> Dashboard
-        
-        Other --> HelloWorld
-    end
-
-    style IP fill:#f9f,stroke:#333,stroke-width:2px
-    style AP fill:#f9f,stroke:#333,stroke-width:2px
-    style IAS fill:#bbf,stroke:#333,stroke-width:2px
-    style AAS fill:#bbf,stroke:#333,stroke-width:2px
+# Check Status
+kubectl -n longhorn-system get pod
 ```
 
-### Key Features
-- **GitOps Structure**: Two-level Argo CD ApplicationSets for infrastructure/apps
-- **Security Boundaries**: Separate projects with RBAC enforcement
-- **Sync Waves**: Infrastructure deploys first (negative sync waves)
-- **Self-Healing**: Automated sync with pruning and failure recovery
+## Mitch's Notes
 
-## 🚀 Quick Start
+Original: https://github.com/mitchross/k3s-argocd-starter?tab=readme-ov-file#-quick-start
 
 ### 1. System Setup
 ```bash
@@ -261,23 +188,6 @@ kubectl -n argocd patch secret argocd-secret -p '{"stringData": { "admin.passwor
 # - AlertManager: 10Gi for alert history
 ```
 
-### 6. Install Longhorn
-
-```sh
-# Add longhorn repo, and update
-helm repo add longhorn https://charts.longhorn.io
-helm repo update
-
-# Create namespace
-kubectl create namespace longhorn-system
-
-# Install Longhorn
-helm install longhorn longhorn/longhorn --namespace longhorn-system
-
-# Check Status
-kubectl -n longhorn-system get pod
-```
-
 ## 🔒 Security Setup
 
 ### Cloudflare Integration
@@ -407,15 +317,6 @@ cilium connectivity test --all-flows
 | **Infra**      | Cilium, Gateway API, Cloudflared    |
 | **Storage**    | OpenEBS                             |
 | **Security**   | cert-manager, Argo CD Projects      |
-
-## 🤝 Contributing
-Contributions welcome! Please:
-1. Maintain existing comment structure
-2. Keep all warnings/security notes
-3. Open issue before major changes
-
-## 📝 License
-MIT License - Full text in [LICENSE](LICENSE)
 
 ## 🔧 Troubleshooting
 
