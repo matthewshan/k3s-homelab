@@ -106,10 +106,21 @@ rm cilium-linux-${CLI_ARCH}.tar.gz*
 
 # Helm install Cilium
 helm repo add cilium https://helm.cilium.io && helm repo update
-helm install cilium cilium/cilium -n kube-system \
-  -f infrastructure/networking/cilium/values.yaml \
-  --version 1.17.3 \
-  --set operator.replicas=1
+# helm install cilium cilium/cilium -n kube-system \
+#   -f infrastructure/networking/cilium/values.yaml \
+#   --version 1.17.3 \
+#   --set operator.replicas=1
+
+cilium install \
+  --helm-set=ipam.mode=kubernetes \
+  --helm-set=kubeProxyReplacement=true \
+  --helm-set=securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
+  --helm-set=securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
+  --helm-set=cgroup.autoMount.enabled=false \
+  --helm-set=cgroup.hostRoot=/sys/fs/cgroup \
+  --helm-set=l2announcements.enabled=true \
+  --helm-set=externalIPs.enabled=true \
+  --helm-set=devices=e+
 
 # Validate installation
 cilium status && cilium connectivity test

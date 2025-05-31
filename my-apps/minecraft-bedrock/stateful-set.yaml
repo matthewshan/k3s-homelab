@@ -23,10 +23,7 @@ spec:
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
-                name: mc-bedrock-config-map
-          volumeMounts:
-            - mountPath: /data
-              name: mc-data
+                name: mc-bedrock-config
           ports:
             - containerPort: 19132
               protocol: UDP
