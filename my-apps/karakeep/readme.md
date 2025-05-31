@@ -2,7 +2,7 @@
 
 ## Secrets
 
-Apply the following secrets for first tiem set up
+Apply the following secrets for first time set up
 
 ```sh
 kubectl apply -f - <<EOF
