@@ -2,16 +2,28 @@
 
 ## How to interact with server
 
-Send commands
+Add to allowlist
 
 ```sh
-kubectl exec -n mc-bedrock mc-bedrock-stateful-set-0 -- send-command yourcommand
+kubectl exec -n mc-bedrock mc-bedrock-stateful-set-0 -- send-command allowlist add Canasian99
 ```
 
 View server logs
 
 ```sh
 kubectl logs -n mc-bedrock mc-bedrock-stateful-set-0
+```
+
+Turn off server
+
+```sh
+kubectl exec -n mc-bedrock mc-bedrock-stateful-set-0 -- send-command stop
+```
+
+Turn on server
+
+```sh
+kubectl exec -n mc-bedrock mc-bedrock-stateful-set-0 -- send-command start
 ```
 
 ## How to Load a world

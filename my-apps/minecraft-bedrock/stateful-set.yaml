@@ -36,6 +36,9 @@ spec:
                 # force health check against IPv4 port
                 - 127.0.0.1
             initialDelaySeconds: 30
+          volumeMounts:
+            - name: mc-data
+              mountPath: /data
           livenessProbe: *probe
           tty: true
           stdin: true
@@ -50,3 +53,4 @@ spec:
         resources:
           requests:
             storage: 1Gi
+        storageClassName: longhorn # Explicitly use longhorn
