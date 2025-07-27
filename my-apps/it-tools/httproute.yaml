@@ -5,7 +5,7 @@ metadata:
   namespace: it-tools
 spec:
   parentRefs:
-    - name: gateway-external
+    - name: gateway-internal
       namespace: gateway
       sectionName: https
   hostnames:
