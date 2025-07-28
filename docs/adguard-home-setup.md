@@ -41,18 +41,10 @@ dns:
     - 0.0.0.0
   port: 53
   rewrites:
-    - domain: homepage.mattshan.dev
-      answer: 192.168.10.21
+    - domain: it-tools.mattshan.dev
+      answer: 192.168.1.194
     - domain: argocd.mattshan.dev
-      answer: 192.168.10.21
-    - domain: intgw.mattshan.dev
-      answer: 192.168.10.21
-    - domain: nginx.mattshan.dev
-      answer: 192.168.10.21
-    - domain: test.mattshan.dev
-      answer: 192.168.10.21
-    - domain: extgw.mattshan.dev
-      answer: 192.168.10.22
+      answer: 192.168.1.194
   upstream_dns:
     - https://1.1.1.1/dns-query
     - https://1.0.0.1/dns-query
