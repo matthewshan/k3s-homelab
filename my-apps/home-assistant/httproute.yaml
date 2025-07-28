@@ -9,7 +9,6 @@ spec:
       kind: Gateway
       name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
     - "home-assistant.mattshan.dev"
   rules:
@@ -22,3 +21,4 @@ spec:
           kind: Service
           name: home-assistant
           port: 8123
+          weight: 1
