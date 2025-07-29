@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: home-assistant-main-config
+  namespace: home-assistant
+data:
+  configuration.yaml: |
+    # This allows Home Assistant to be aware of other integrations that are being loaded
+    default_config:
+
+    # HTTP Configuration for trusted proxies
+    # This is required for Home Assistant to accept requests from the Cilium Gateway
+    http:
+      use_x_forwarded_for: true
+      trusted_proxies:
+        - 10.42.0.0/16  # Your Kubernetes Pod CIDR (default for K3s)
+        - 10.43.0.0/16  # Your Kubernetes Service CIDR (default for K3s)
+        - 192.168.1.194 # The IP of your internal gateway
