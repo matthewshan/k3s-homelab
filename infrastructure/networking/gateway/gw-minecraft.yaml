@@ -1,0 +1,56 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: gateway-minecraft
+  namespace: gateway
+spec:
+  addresses:
+  - type: IPAddress
+    value: 192.168.1.196
+  gatewayClassName: cilium
+  listeners:
+    - name: minecraft-java
+      protocol: TCP
+      port: 25565
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: minecraft
+    - name: minecraft-bedrock-v4-tcp
+      protocol: TCP
+      port: 19132
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: minecraft
+    - name: minecraft-bedrock-v6-tcp
+      protocol: TCP
+      port: 19133
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: minecraft
+    - name: minecraft-bedrock-v4
+      protocol: UDP
+      port: 19132
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: minecraft
+    - name: minecraft-bedrock-v6
+      protocol: UDP
+      port: 19133
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: minecraft

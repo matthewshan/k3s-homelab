@@ -1,0 +1,19 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: UDPRoute
+metadata:
+  name: minecraft-bedrock-v4-route
+  namespace: minecraft
+spec:
+  parentRefs:
+    - name: gateway-minecraft # This is the gateway that handles minecraft traffic
+      namespace: gateway
+      port: 19132
+    - name: gateway-minecraft
+      namespace: gateway
+      port: 19133
+  rules:
+    - backendRefs:
+        - name: minecraft
+          port: 19132
+        - name: minecraft
+          port: 19133
