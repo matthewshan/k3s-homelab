@@ -27,15 +27,15 @@ spec:
           selector:
             matchLabels:
               kubernetes.io/metadata.name: minecraft
-    - name: minecraft-bedrock-v6-tcp
-      protocol: TCP
-      port: 19133
-      allowedRoutes:
-        namespaces:
-          from: Selector
-          selector:
-            matchLabels:
-              kubernetes.io/metadata.name: minecraft
+    # - name: minecraft-bedrock-v6-tcp
+    #   protocol: TCP
+    #   port: 19133
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: Selector
+    #       selector:
+    #         matchLabels:
+    #           kubernetes.io/metadata.name: minecraft
     - name: minecraft-bedrock-v4
       protocol: UDP
       port: 19132
