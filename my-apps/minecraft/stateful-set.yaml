@@ -1,9 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   namespace: minecraft
   name: minecraft
 spec:
+  serviceName: "minecraft"
   replicas: 1
   selector:
     matchLabels:
@@ -41,7 +42,12 @@ spec:
           name: bedrock-v4
         - containerPort: 19133
           name: bedrock-v6
-      volumes:
-      - name: minecraft-data
-        persistentVolumeClaim:
-          claimName: minecraft-pvc
+  volumeClaimTemplates:
+  - metadata:
+      name: minecraft-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "longhorn"
+      resources:
+        requests:
+          storage: 3Gi
