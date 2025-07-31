@@ -4,11 +4,6 @@ metadata:
   name: minecraft
   namespace: minecraft
 spec:
-  type: ClusterIP
-  ipFamilyPolicy: PreferDualStack
-  ipFamilies:
-    - IPv4
-    # - IPv6
   ports:
     - name: java
       port: 25565
@@ -30,6 +25,6 @@ spec:
     #   port: 19133
     #   protocol: UDP
     #   targetPort: bedrock-v6
-
+  type: NodePort
   selector:
     app: minecraft
