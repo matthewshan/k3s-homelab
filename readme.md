@@ -3,27 +3,6 @@ This repo is originally a fork of Mitch Ross': https://github.com/mitchross/k3s-
 
 Check out his video on YouTube on this K3s setup: https://www.youtube.com/watch?v=AY5mC5rDUcw
 
-## My Notes
-
-### Installing Longhorn
-
-Longhorn is a simple cluster storage solution
-
-```sh
-# Add longhorn repo, and update
-helm repo add longhorn https://charts.longhorn.io
-helm repo update
-
-# Create namespace
-kubectl create namespace longhorn-system
-
-# Install Longhorn
-helm install longhorn longhorn/longhorn --namespace longhorn-system
-
-# Check Status
-kubectl -n longhorn-system get pod
-```
-
 ## Mitch's Notes
 
 Original: https://github.com/mitchross/k3s-argocd-starter?tab=readme-ov-file#-quick-start
