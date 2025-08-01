@@ -1,6 +1,6 @@
 persistence:
   enabled: true
-  size: 5Gi
+  size: 10Gi
   storageClass: longhorn
 service:
   http:
@@ -9,4 +9,8 @@ service:
     type: ClusterIP
 replicaCount: 1
 valkey-cluster:
-  enabler: false
+  enabled: false
+postgresql-ha:
+  enabled: false
+postgresql:
+  enabled: true
