@@ -7,3 +7,4 @@ service:
     type: ClusterIP
   ssh:
     type: ClusterIP
+replicaCount: 1
