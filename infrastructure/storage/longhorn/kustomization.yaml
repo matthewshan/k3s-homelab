@@ -11,3 +11,4 @@ helmCharts:
     releaseName: longhorn
     namespace: longhorn-system
     includeCRDs: true
+    valuesFile: values.yaml
