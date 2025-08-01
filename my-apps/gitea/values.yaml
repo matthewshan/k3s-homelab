@@ -4,6 +4,6 @@ persistence:
   storageClass: longhorn
 service:
   http:
-    type: ClusterIp
+    type: ClusterIP
   ssh:
-    type: ClusterIp
+    type: ClusterIP
