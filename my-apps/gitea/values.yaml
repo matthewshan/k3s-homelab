@@ -1,6 +1,6 @@
 persistence:
   enabled: true
-  size: 10Gi
+  size: 5Gi
   storageClass: longhorn
 service:
   http:
@@ -8,3 +8,5 @@ service:
   ssh:
     type: ClusterIP
 replicaCount: 1
+valkey-cluster:
+  enabler: false
