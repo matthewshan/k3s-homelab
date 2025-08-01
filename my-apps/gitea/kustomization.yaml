@@ -11,4 +11,5 @@ helmCharts:
     version: 12.1.2
     releaseName: gitea
     namespace: gitea
+    includeCRDs: true
     valuesFile: values.yaml
