@@ -19,7 +19,7 @@ spec:
       backendRefs:
         - group: ''
           kind: Service
-          name: gitea
+          name: gitea-http
           port: 3000
           weight: 1
         
