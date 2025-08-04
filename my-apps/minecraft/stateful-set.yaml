@@ -14,18 +14,15 @@ spec:
       labels:
         app: minecraft
     spec:
+      imagePullSecrets:
+      - name: gitea-pull-secret
       containers:
       - name: minecraft
-        image: 05jchambers/legendary-minecraft-geyser-floodgate:latest
+        image: gitea.mattshan.dev/minecraft:alphav0.0.1
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: minecraft-data
           mountPath: /minecraft
-        env:
-        - name: MaxMemory
-          value: '1024'
-        - name: k8s
-          value: "True"
         resources:
           limits:
             cpu: 1500m
