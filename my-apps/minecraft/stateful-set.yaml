@@ -18,7 +18,7 @@ spec:
       - name: gitea-pull-secret
       containers:
       - name: minecraft
-        image: gitea.mattshan.dev/minecraft:alphav0.0.1
+        image: gitea.mattshan.dev/matthewshan99/minecraft:alphav0.0.1
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: minecraft-data
