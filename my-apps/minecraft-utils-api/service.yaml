@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-utils-api
+  namespace: minecraft-utils-api
+spec:
+  selector:
+    app: minecraft-utils-api
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
