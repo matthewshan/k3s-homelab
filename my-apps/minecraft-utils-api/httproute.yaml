@@ -25,6 +25,6 @@ spec:
       backendRefs:
         - group: ''
           kind: Service
-          name: minecraft-utils-api
+          name: minecraft-utils-api-service
           port: 8080
           weight: 1
