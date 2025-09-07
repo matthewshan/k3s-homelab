@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: minecraft-utils-ui
-        image: ghcr.io/matthewshan/minecraft-utils-ui:b72d2b4
+        image: ghcr.io/matthewshan/minecraft-utils-ui:a72dfd4
         env: 
         - name: MINECRAFT_API_URL
           value: http://minecraft-utils-api-service.minecraft-utils-api.svc.cluster.local:8080
