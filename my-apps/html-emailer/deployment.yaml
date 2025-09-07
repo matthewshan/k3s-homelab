@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: html-emailer
+  namespace: html-emailer
+  labels:
+    app.kubernetes.io/name: html-emailer
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: html-emailer
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: html-emailer
+    spec:
+      containers:
+      - name: html-emailer
+        image: ghcr.io/matthewshan/html-emailer:v0.0.1-beta
+        ports:
+        - name: http
+          containerPort: 3000
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi

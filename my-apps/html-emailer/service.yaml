@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: html-emailer-service
+  namespace: html-emailer
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: html-emailer
