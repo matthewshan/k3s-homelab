@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: html-emailer
-        image: ghcr.io/matthewshan/html-emailer:v0.1.1-beta
+        image: ghcr.io/matthewshan/html-emailer:v0.1.2-beta
         ports:
         - name: http
           containerPort: 3000
