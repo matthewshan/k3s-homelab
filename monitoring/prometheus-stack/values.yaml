@@ -3,7 +3,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: openebs-hostpath
+          storageClassName: longhorn
           volumeName: pv-prometheus
           accessModes:
             - ReadWriteOnce
