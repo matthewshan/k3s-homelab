@@ -1,24 +1,29 @@
+# my-apps/myapplications-appset.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: monitoring-components
+  name: applications
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   generators:
     - git:
         repoURL: https://github.com/matthewshan/k3s-homelab
         revision: HEAD
         directories:
-          - path: monitoring/*
+          - path: applications/*
+          - path: applications/*/*
+          - exclude: true
+            path: applications/applications-appset.yaml
   template:
     metadata:
+      # Changed from 'app-{{path.basename}}' to just '{{path.basename}}'
       name: '{{path.basename}}'
       labels:
-        type: monitoring
+        type: application
     spec:
-      project: monitoring
+      project: applications
       source:
         plugin:
           name: kustomize-build-with-helm
@@ -27,7 +32,7 @@ spec:
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: monitoring
+        namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           prune: true
