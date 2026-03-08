@@ -125,6 +125,15 @@ git clone https://github.com/matthewshan/k3s-homelab
 # Argo CD Bootstrap
 kubectl create namespace argocd
 kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply --server-side -f -
+
+# Argo Password Reset
+# Generate a New Password:
+# Use a bcrypt hash generator (e.g. https://www.browserling.com/tools/bcrypt)
+# Then update the argocd-secret secret with your new bcrypt hash:
+kubectl -n argocd patch secret argocd-secret \
+  -p '{"stringData": { "admin.password": "<YOUR_BCRYPT_HASH>", "admin.passwordMtime": "'$(date +%FT%T%Z)'" }}'
+
+
 ```
 
 ### 6. CloudFlare Tunnel
