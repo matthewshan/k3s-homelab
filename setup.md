@@ -16,10 +16,10 @@ echo -e "xt_socket\niptable_raw" | sudo tee /etc/modules-load.d/cilium.conf
 ### 2. K3s Installation
 ```bash
 # Customize these values!
-export SETUP_NODEIP=192.168.10.202  # Your node IP
+export SETUP_NODEIP=192.168.1.163  # Your node IP
 export SETUP_CLUSTERTOKEN=randomtokensecret1234  # Strong token
 
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.2+k3s1" \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.2+k3s1" \
   INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
   --disable=flannel,local-storage,metrics-server,servicelb,traefik \
   --flannel-backend='none' \
@@ -74,7 +74,8 @@ cilium install \
   --helm-set=devices=e+
 
 # Validate installation
-cilium status && cilium connectivity test
+cilium status --wait
+cilium connectivity test
 
 # Critical L2 Configuration Note:
 # Before applying the CiliumL2AnnouncementPolicy, you MUST identify your correct network interface:
@@ -112,11 +113,51 @@ Then test locally with `kubectl get nodes`
 
 ```
 # Gateway API CRDs
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
 
 # Argo CD Bootstrap
 kubectl create namespace argocd
-kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -
+kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply --server-side -f -
 kubectl apply -f infrastructure/controllers/argocd/projects.yaml
+```
+
+### 6. CloudFlare Tunnel
+```
+export CLOUDFLARE_API_TOKEN="your-api-token-here"
+export CLOUDFLARE_EMAIL="your-cloudflare-email"
+export DOMAIN="yourdomain.com"
+export TUNNEL_NAME="k3s-cluster"  
+
+wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared-linux-amd64.deb
+
+cloudflared tunnel create $TUNNEL_NAME
+cloudflared tunnel token --cred-file tunnel-creds.json $TUNNEL_NAME
+
+kubectl create namespace cloudflared
+
+kubectl create secret generic tunnel-credentials \
+  --namespace=cloudflared \
+  --from-file=credentials.json=tunnel-creds.json
+
+# SECURITY: Destroy local credentials ( Optional )
+rm -v tunnel-creds.json && echo "Credentials file removed"
+
+# Configure DNS
+TUNNEL_ID=$(cloudflared tunnel list | grep $TUNNEL_NAME | awk '{print $1}')
+cloudflared tunnel route dns $TUNNEL_ID "*.$DOMAIN"
+```
+
+### 7. Certificate Management
+```bash
+# Create cert-manager secrets
+kubectl create namespace cert-manager
+kubectl create secret generic cloudflare-api-token -n cert-manager \
+  --from-literal=api-token=$CLOUDFLARE_API_TOKEN \
+  --from-literal=email=$CLOUDFLARE_EMAIL
+
+# Verify secrets
+kubectl get secret cloudflare-api-token -n cert-manager -o jsonpath='{.data.email}' | base64 -d
+kubectl get secret cloudflare-api-token -n cert-manager -o jsonpath='{.data.api-token}' | base64 -d
 ```
