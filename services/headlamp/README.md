@@ -1,0 +1,1 @@
+kubectl create token headlamp-admin -n headlamp > token.txt
