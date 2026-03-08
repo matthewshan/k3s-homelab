@@ -114,4 +114,9 @@ Then test locally with `kubectl get nodes`
 # Gateway API CRDs
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
+
+# Argo CD Bootstrap
+kubectl create namespace argocd
+kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -
+kubectl apply -f infrastructure/controllers/argocd/projects.yaml
 ```
