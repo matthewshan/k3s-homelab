@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/matthewshan/k3s-homelab
+        revision: HEAD
+        directories:
+          - path: services/*
+          - path: services/*/*
+          - exclude: true
+            path: services/services-appset.yaml
+  template:
+    metadata:
+      name: '{{path.basename}}'
+      labels:
+        type: services
+    spec:
+      project: services
+      source:
+        plugin:
+          name: kustomize-build-with-helm
+        repoURL: https://github.com/matthewshan/k3s-homelab
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

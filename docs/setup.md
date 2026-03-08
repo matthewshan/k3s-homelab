@@ -183,4 +183,5 @@ kubectl get secret cloudflare-api-token -n cert-manager -o jsonpath='{.data.api-
 kubectl apply -f infrastructure/controllers/argocd/projects.yaml
 kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
 kubectl apply -f applications/applications-appset.yaml
+kubectl apply -f services/services-appset.yaml
 ```
