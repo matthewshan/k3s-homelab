@@ -21,7 +21,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: n8n
-        image: docker.io/n8nio/n8n:1.82.1
+        image: docker.io/n8nio/n8n:2.10.4
         env:
         - name: DB_TYPE
           value: sqlite
