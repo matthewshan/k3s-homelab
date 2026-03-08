@@ -116,10 +116,15 @@ Then test locally with `kubectl get nodes`
 kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
 kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
 
+# Git
+sudo apt update
+sudo apt install git -y
+git clone https://github.com/matthewshan/k3s-homelab
+
+
 # Argo CD Bootstrap
 kubectl create namespace argocd
 kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply --server-side -f -
-kubectl apply -f infrastructure/controllers/argocd/projects.yaml
 ```
 
 ### 6. CloudFlare Tunnel
@@ -131,6 +136,8 @@ export TUNNEL_NAME="k3s-cluster"
 
 wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
 sudo dpkg -i cloudflared-linux-amd64.deb
+
+cloudflared tunnel login
 
 cloudflared tunnel create $TUNNEL_NAME
 cloudflared tunnel token --cred-file tunnel-creds.json $TUNNEL_NAME
@@ -160,4 +167,11 @@ kubectl create secret generic cloudflare-api-token -n cert-manager \
 # Verify secrets
 kubectl get secret cloudflare-api-token -n cert-manager -o jsonpath='{.data.email}' | base64 -d
 kubectl get secret cloudflare-api-token -n cert-manager -o jsonpath='{.data.api-token}' | base64 -d
+```
+
+### 8. Let Argo go wild!
+```
+kubectl apply -f infrastructure/controllers/argocd/projects.yaml
+kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
+kubectl apply -f applications/applications-appset.yaml
 ```

@@ -6,7 +6,6 @@ resources:
   - gateway-class.yaml
   - ns.yaml
   - gw-external.yaml
-  - gw-minecraft.yaml
   - gw-internal.yaml
   - cert-mattshandev.yaml
 
