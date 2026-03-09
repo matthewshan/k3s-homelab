@@ -1,0 +1,136 @@
+cluster:
+  name: k3s-homelab
+
+destinations:
+  - name: grafana-cloud-metrics
+    type: prometheus
+    url: https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push
+    auth:
+      type: basic
+      usernameKey: metricsUsername
+      passwordKey: password
+    secret:
+      create: false
+      name: grafana-cloud-auth-grafana-k8s-monitoring
+      namespace: monitoring
+  - name: grafana-cloud-logs
+    type: loki
+    url: https://logs-prod-036.grafana.net/loki/api/v1/push
+    auth:
+      type: basic
+      usernameKey: logsUsername
+      passwordKey: password
+    secret:
+      create: false
+      name: grafana-cloud-auth-grafana-k8s-monitoring
+      namespace: monitoring
+  - name: gc-otlp-endpoint
+    type: otlp
+    url: https://otlp-gateway-prod-us-east-2.grafana.net/otlp
+    protocol: http
+    auth:
+      type: basic
+      usernameKey: otlpUsername
+      passwordKey: password
+    secret:
+      create: false
+      name: grafana-cloud-auth-grafana-k8s-monitoring
+      namespace: monitoring
+    metrics:
+      enabled: true
+    logs:
+      enabled: true
+    traces:
+      enabled: true
+
+clusterMetrics:
+  enabled: true
+  opencost:
+    enabled: true
+    metricsSource: grafana-cloud-metrics
+    opencost:
+      exporter:
+        defaultClusterId: k3s-homelab
+      prometheus:
+        existingSecretName: grafana-cloud-auth-grafana-k8s-monitoring
+        username_key: metricsUsername
+        external:
+          url: https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom
+  kepler:
+    enabled: true
+
+clusterEvents:
+  enabled: true
+
+podLogs:
+  enabled: true
+
+applicationObservability:
+  enabled: true
+  receivers:
+    otlp:
+      grpc:
+        enabled: true
+        port: 4317
+      http:
+        enabled: true
+        port: 4318
+    zipkin:
+      enabled: true
+      port: 9411
+
+alloy-metrics:
+  enabled: true
+  remoteConfig:
+    enabled: true
+    url: https://fleet-management-prod-008.grafana.net
+    auth:
+      type: basic
+      usernameKey: otlpUsername
+      passwordKey: password
+    secret:
+      create: false
+      name: grafana-cloud-auth-grafana-k8s-monitoring
+      namespace: monitoring
+
+alloy-singleton:
+  enabled: true
+  remoteConfig:
+    enabled: true
+    url: https://fleet-management-prod-008.grafana.net
+    auth:
+      type: basic
+      usernameKey: otlpUsername
+      passwordKey: password
+    secret:
+      create: false
+      name: grafana-cloud-auth-grafana-k8s-monitoring
+      namespace: monitoring
+
+alloy-logs:
+  enabled: true
+  remoteConfig:
+    enabled: true
+    url: https://fleet-management-prod-008.grafana.net
+    auth:
+      type: basic
+      usernameKey: otlpUsername
+      passwordKey: password
+    secret:
+      create: false
+      name: grafana-cloud-auth-grafana-k8s-monitoring
+      namespace: monitoring
+
+alloy-receiver:
+  enabled: true
+  remoteConfig:
+    enabled: true
+    url: https://fleet-management-prod-008.grafana.net
+    auth:
+      type: basic
+      usernameKey: otlpUsername
+      passwordKey: password
+    secret:
+      create: false
+      name: grafana-cloud-auth-grafana-k8s-monitoring
+      namespace: monitoring
