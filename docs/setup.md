@@ -1,3 +1,5 @@
+# Setup.md
+The purpose of this file is for me to keep track of bootstrap commands that I ran when originally provisioning the cluster. 
 
 ### 1. System Setup
 ```bash
@@ -57,10 +59,6 @@ rm cilium-linux-${CLI_ARCH}.tar.gz*
 
 # Helm install Cilium
 helm repo add cilium https://helm.cilium.io && helm repo update
-# helm install cilium cilium/cilium -n kube-system \
-#   -f infrastructure/networking/cilium/values.yaml \
-#   --version 1.17.3 \
-#   --set operator.replicas=1
 
 cilium install \
   --helm-set=ipam.mode=kubernetes \
@@ -179,9 +177,11 @@ kubectl get secret cloudflare-api-token -n cert-manager -o jsonpath='{.data.api-
 ```
 
 ### 8. Let Argo go wild!
-```
+Additonally, look into `infrastructure\monitoring\grafana\README.md` and `services\n8n\README.md`
+```sh
 kubectl apply -f infrastructure/controllers/argocd/projects.yaml
 kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
 kubectl apply -f applications/applications-appset.yaml
 kubectl apply -f services/services-appset.yaml
 ```
+
