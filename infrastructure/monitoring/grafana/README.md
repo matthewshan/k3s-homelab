@@ -28,3 +28,5 @@ kubectl create secret generic grafana-cloud-auth-grafana-k8s-monitoring -n monit
 ```
 
 After the secrets exist, refresh the `infrastructure-components` ApplicationSet or let Argo CD reconcile normally.
+
+This repo intentionally manages the Alloy logs collector configuration locally so targeted pod log filters can be declared in [values.yaml](c:/Users/Matthew%20Shan/Code/k3s-homelab/infrastructure/monitoring/grafana/values.yaml). The current filter drops the known Longhorn `csi-snapshotter` missing `VolumeSnapshot*` watch noise before it is shipped to Grafana Loki.
