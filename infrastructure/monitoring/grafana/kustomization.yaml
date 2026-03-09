@@ -10,4 +10,5 @@ helmCharts:
     version: 3.8.1
     releaseName: grafana-k8s-monitoring
     namespace: monitoring
+    includeCRDs: true
     valuesFile: values.yaml
