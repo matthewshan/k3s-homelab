@@ -10,16 +10,3 @@ spec:
   resourceRef:
     name: mattshan-dev-apps
     namespace: twingate
----
-apiVersion: twingate.com/v1beta
-kind: TwingateResourceAccess
-metadata:
-  name: homelab-users-k3s-api
-  namespace: twingate
-spec:
-  groupRef:
-    name: homelab-users
-    namespace: twingate
-  resourceRef:
-    name: k3s-api
-    namespace: twingate
