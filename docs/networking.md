@@ -30,20 +30,15 @@ The repo now uses operator-managed Twingate objects in `infrastructure/networkin
 
 It starts with a single connector and can grow to multiple connectors later if availability or placement needs change.
 
-The managed app resources are explicit hostnames instead of a wildcard:
+The managed app resource is a wildcard instead of per-app host entries:
 
-- `argocd.mattshan.dev`
-- `headlamp.mattshan.dev`
-- `n8n.mattshan.dev`
-- `it-tools.mattshan.dev`
-- `longhorn.mattshan.dev`
+- `*.mattshan.dev`
 
-The repo also creates two Twingate groups:
+The repo creates one Twingate group:
 
-- `Homelab Users` for browser access
-- `Homelab Cluster Admins` for Kubernetes API access
+- `Homelab Users` for browser access and Kubernetes API access
 
-User membership stays out of Git. After sync, add users to those groups in the Twingate Admin Console or manage membership through a separate non-public workflow.
+User membership stays out of Git. After sync, add users to that group in the Twingate Admin Console or manage membership through a separate non-public workflow.
 
 The Twingate resources intentionally preserve the existing internal routing model:
 

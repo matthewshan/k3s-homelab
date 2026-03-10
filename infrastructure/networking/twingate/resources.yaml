@@ -1,91 +1,12 @@
 apiVersion: twingate.com/v1beta
 kind: TwingateResource
 metadata:
-  name: argocd-mattshan-dev
+  name: mattshan-dev-apps
   namespace: twingate
 spec:
-  name: argocd.mattshan.dev
-  address: argocd.mattshan.dev
-  protocols:
-    allowIcmp: false
-    tcp:
-      policy: RESTRICTED
-      ports:
-        - start: 80
-          end: 80
-        - start: 443
-          end: 443
-    udp:
-      policy: RESTRICTED
----
-apiVersion: twingate.com/v1beta
-kind: TwingateResource
-metadata:
-  name: headlamp-mattshan-dev
-  namespace: twingate
-spec:
-  name: headlamp.mattshan.dev
-  address: headlamp.mattshan.dev
-  protocols:
-    allowIcmp: false
-    tcp:
-      policy: RESTRICTED
-      ports:
-        - start: 80
-          end: 80
-        - start: 443
-          end: 443
-    udp:
-      policy: RESTRICTED
----
-apiVersion: twingate.com/v1beta
-kind: TwingateResource
-metadata:
-  name: n8n-mattshan-dev
-  namespace: twingate
-spec:
-  name: n8n.mattshan.dev
-  address: n8n.mattshan.dev
-  protocols:
-    allowIcmp: false
-    tcp:
-      policy: RESTRICTED
-      ports:
-        - start: 80
-          end: 80
-        - start: 443
-          end: 443
-    udp:
-      policy: RESTRICTED
----
-apiVersion: twingate.com/v1beta
-kind: TwingateResource
-metadata:
-  name: it-tools-mattshan-dev
-  namespace: twingate
-spec:
-  name: it-tools.mattshan.dev
-  address: it-tools.mattshan.dev
-  protocols:
-    allowIcmp: false
-    tcp:
-      policy: RESTRICTED
-      ports:
-        - start: 80
-          end: 80
-        - start: 443
-          end: 443
-    udp:
-      policy: RESTRICTED
----
-apiVersion: twingate.com/v1beta
-kind: TwingateResource
-metadata:
-  name: longhorn-mattshan-dev
-  namespace: twingate
-spec:
-  name: longhorn.mattshan.dev
-  address: longhorn.mattshan.dev
+  name: mattshan.dev apps
+  address: "*.mattshan.dev"
+  isBrowserShortcutEnabled: false
   protocols:
     allowIcmp: false
     tcp:
