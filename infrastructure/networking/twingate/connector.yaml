@@ -1,0 +1,7 @@
+apiVersion: twingate.com/v1beta
+kind: TwingateConnector
+metadata:
+  name: homelab-connector
+  namespace: twingate
+spec:
+  name: homelab-connector

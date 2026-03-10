@@ -36,3 +36,35 @@ If you ever need a manual connector secret, the expected keys are:
 
 - Set `twingateOperator.network` in `values.yaml` to your Twingate network slug before syncing.
 - When upgrading the chart, review upstream CRD changes because Helm does not automatically update CRDs for existing installs.
+
+## Managed access objects in this repo
+
+This folder now manages four kinds of Twingate objects through the operator:
+
+- `TwingateConnector`: one connector for the homelab remote network
+- `TwingateGroup`: one browser-app group and one narrower Kubernetes admin group
+- `TwingateResource`: explicit resources for the internal app hostnames plus the Kubernetes API
+- `TwingateResourceAccess`: bindings from those resources to the repo-managed groups
+
+The repo intentionally keeps user and service-account membership out of Git. After the manifests sync:
+
+1. Open the Twingate Admin Console.
+2. Add the right users to `Homelab Users` for browser access.
+3. Add the right admins to `Homelab Cluster Admins` for `kubectl` and Freelens access.
+
+The browser resources target the existing internal Gateway hostnames:
+
+- `argocd.mattshan.dev`
+- `headlamp.mattshan.dev`
+- `n8n.mattshan.dev`
+- `it-tools.mattshan.dev`
+- `longhorn.mattshan.dev`
+
+The Kubernetes API resource targets `192.168.1.163` with TCP port `6443`.
+
+## Connector and DNS expectations
+
+- The connectors rely on the remote network ID from `twingate-operator-auth`.
+- They must be able to resolve the internal app hostnames to `192.168.1.194` from inside the cluster or attached LAN path.
+- The app resources restrict access to TCP ports `80` and `443` so clients still use the existing internal gateway flow.
+- The Kubernetes API resource restricts access to TCP port `6443` and is assigned only to the admin group.

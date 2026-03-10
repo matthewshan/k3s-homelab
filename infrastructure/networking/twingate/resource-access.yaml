@@ -1,0 +1,77 @@
+apiVersion: twingate.com/v1beta
+kind: TwingateResourceAccess
+metadata:
+  name: homelab-users-argocd
+  namespace: twingate
+spec:
+  groupRef:
+    name: homelab-users
+    namespace: twingate
+  resourceRef:
+    name: argocd-mattshan-dev
+    namespace: twingate
+---
+apiVersion: twingate.com/v1beta
+kind: TwingateResourceAccess
+metadata:
+  name: homelab-users-headlamp
+  namespace: twingate
+spec:
+  groupRef:
+    name: homelab-users
+    namespace: twingate
+  resourceRef:
+    name: headlamp-mattshan-dev
+    namespace: twingate
+---
+apiVersion: twingate.com/v1beta
+kind: TwingateResourceAccess
+metadata:
+  name: homelab-users-n8n
+  namespace: twingate
+spec:
+  groupRef:
+    name: homelab-users
+    namespace: twingate
+  resourceRef:
+    name: n8n-mattshan-dev
+    namespace: twingate
+---
+apiVersion: twingate.com/v1beta
+kind: TwingateResourceAccess
+metadata:
+  name: homelab-users-it-tools
+  namespace: twingate
+spec:
+  groupRef:
+    name: homelab-users
+    namespace: twingate
+  resourceRef:
+    name: it-tools-mattshan-dev
+    namespace: twingate
+---
+apiVersion: twingate.com/v1beta
+kind: TwingateResourceAccess
+metadata:
+  name: homelab-users-longhorn
+  namespace: twingate
+spec:
+  groupRef:
+    name: homelab-users
+    namespace: twingate
+  resourceRef:
+    name: longhorn-mattshan-dev
+    namespace: twingate
+---
+apiVersion: twingate.com/v1beta
+kind: TwingateResourceAccess
+metadata:
+  name: homelab-cluster-admins-k3s-api
+  namespace: twingate
+spec:
+  groupRef:
+    name: homelab-cluster-admins
+    namespace: twingate
+  resourceRef:
+    name: k3s-api
+    namespace: twingate

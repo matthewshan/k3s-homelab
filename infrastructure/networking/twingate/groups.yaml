@@ -1,0 +1,15 @@
+apiVersion: twingate.com/v1beta
+kind: TwingateGroup
+metadata:
+  name: homelab-users
+  namespace: twingate
+spec:
+  name: Homelab Users
+---
+apiVersion: twingate.com/v1beta
+kind: TwingateGroup
+metadata:
+  name: homelab-cluster-admins
+  namespace: twingate
+spec:
+  name: Homelab Cluster Admins

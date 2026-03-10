@@ -20,3 +20,35 @@ Before syncing it, create the `twingate-operator-auth` secret in the `twingate` 
 The operator does not require `TWINGATE_ACCESS_TOKEN` or `TWINGATE_REFRESH_TOKEN` at install time. Those are connector credentials and are only needed for manual connector workflows outside the operator-managed path.
 
 See `infrastructure/networking/twingate/README.md` for the secret creation command and upgrade notes.
+
+## Twingate cluster access
+
+The repo now uses operator-managed Twingate objects in `infrastructure/networking/twingate` for two access paths:
+
+- browser access to internal apps through the existing internal Gateway at `192.168.1.194`
+- direct TCP access to the Kubernetes API at `192.168.1.163:6443`
+
+It starts with a single connector and can grow to multiple connectors later if availability or placement needs change.
+
+The managed app resources are explicit hostnames instead of a wildcard:
+
+- `argocd.mattshan.dev`
+- `headlamp.mattshan.dev`
+- `n8n.mattshan.dev`
+- `it-tools.mattshan.dev`
+- `longhorn.mattshan.dev`
+
+The repo also creates two Twingate groups:
+
+- `Homelab Users` for browser access
+- `Homelab Cluster Admins` for Kubernetes API access
+
+User membership stays out of Git. After sync, add users to those groups in the Twingate Admin Console or manage membership through a separate non-public workflow.
+
+The Twingate resources intentionally preserve the existing internal routing model:
+
+- app hostnames stay pointed at `192.168.1.194`
+- HTTP and HTTPS still terminate on `gateway-internal`
+- `kubectl` and Freelens bypass the gateway and connect directly to `https://192.168.1.163:6443`
+
+If a Twingate-connected device cannot open an internal app hostname, first verify that the connectors resolve `*.mattshan.dev` to the internal gateway IP rather than a public Cloudflare path.

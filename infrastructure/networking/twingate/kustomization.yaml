@@ -3,6 +3,10 @@ kind: Kustomization
 
 resources:
   - ns.yaml
+  - connector.yaml
+  - groups.yaml
+  - resources.yaml
+  - resource-access.yaml
 
 helmCharts:
   - name: twingate-operator
