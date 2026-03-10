@@ -6,7 +6,8 @@ resources:
   - connector.yaml
   - groups.yaml
   - resources.yaml
-  - resource-access.yaml
+  - user-resource-access.yaml
+  - admin-resource-access.yaml
 
 helmCharts:
   - name: twingate-operator

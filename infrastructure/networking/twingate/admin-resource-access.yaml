@@ -1,11 +1,11 @@
 apiVersion: twingate.com/v1beta
 kind: TwingateResourceAccess
 metadata:
-  name: homelab-users-argocd
+  name: homelab-cluster-admins-argocd
   namespace: twingate
 spec:
   groupRef:
-    name: homelab-users
+    name: homelab-cluster-admins
     namespace: twingate
   resourceRef:
     name: argocd-mattshan-dev
@@ -14,11 +14,11 @@ spec:
 apiVersion: twingate.com/v1beta
 kind: TwingateResourceAccess
 metadata:
-  name: homelab-users-headlamp
+  name: homelab-cluster-admins-headlamp
   namespace: twingate
 spec:
   groupRef:
-    name: homelab-users
+    name: homelab-cluster-admins
     namespace: twingate
   resourceRef:
     name: headlamp-mattshan-dev
@@ -27,11 +27,11 @@ spec:
 apiVersion: twingate.com/v1beta
 kind: TwingateResourceAccess
 metadata:
-  name: homelab-users-n8n
+  name: homelab-cluster-admins-n8n
   namespace: twingate
 spec:
   groupRef:
-    name: homelab-users
+    name: homelab-cluster-admins
     namespace: twingate
   resourceRef:
     name: n8n-mattshan-dev
@@ -40,11 +40,11 @@ spec:
 apiVersion: twingate.com/v1beta
 kind: TwingateResourceAccess
 metadata:
-  name: homelab-users-it-tools
+  name: homelab-cluster-admins-it-tools
   namespace: twingate
 spec:
   groupRef:
-    name: homelab-users
+    name: homelab-cluster-admins
     namespace: twingate
   resourceRef:
     name: it-tools-mattshan-dev
@@ -53,11 +53,11 @@ spec:
 apiVersion: twingate.com/v1beta
 kind: TwingateResourceAccess
 metadata:
-  name: homelab-users-longhorn
+  name: homelab-cluster-admins-longhorn
   namespace: twingate
 spec:
   groupRef:
-    name: homelab-users
+    name: homelab-cluster-admins
     namespace: twingate
   resourceRef:
     name: longhorn-mattshan-dev
