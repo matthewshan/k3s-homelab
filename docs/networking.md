@@ -52,3 +52,11 @@ The Twingate resources intentionally preserve the existing internal routing mode
 - `kubectl` and Freelens bypass the gateway and connect directly to `https://192.168.1.163:6443`
 
 If a Twingate-connected device cannot open an internal app hostname, first verify that the connectors resolve `*.mattshan.dev` to the internal gateway IP rather than a public Cloudflare path.
+
+## CoreDNS forward for mattshan.dev
+
+The cluster adds a CoreDNS custom server block in `kube-system` so `mattshan.dev` queries forward to the AdGuard Home DNS server at `192.168.1.107`.
+
+This keeps in-cluster resolution aligned with LAN clients and is especially important for the Twingate connector, which needs `argocd.mattshan.dev`, `headlamp.mattshan.dev`, `n8n.mattshan.dev`, `it-tools.mattshan.dev`, and `longhorn.mattshan.dev` to resolve to the internal gateway IP `192.168.1.194`.
+
+The manifest lives under `infrastructure/networking/coredns` and relies on the default k3s CoreDNS `import /etc/coredns/custom/*.server` hook.
