@@ -1,0 +1,8 @@
+twingateOperator:
+  network: matthewshan99
+  existingAPIKeySecret:
+    name: twingate-operator-auth
+    key: TWINGATE_API_KEY
+  existingRemoteNetworkIdSecret:
+    name: twingate-operator-auth
+    key: TWINGATE_REMOTE_NETWORK_ID
