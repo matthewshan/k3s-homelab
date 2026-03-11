@@ -72,7 +72,7 @@ podLogs:
     }
 
     stage.match {
-      selector = "{namespace=\"twingate\"} |~ \"^ANALYTICS .*\\\"connector\\\":\\\{.*\\\"name\\\":\\\"homelab-connector\\\".*\\\"event_type\\\":\\\"established_connection\\\"\""
+      selector = "{namespace=\"twingate\"} |~ \"^ANALYTICS .*\\\"connector\\\":\\{.*\\\"name\\\":\\\"homelab-connector\\\".*\\\"event_type\\\":\\\"established_connection\\\"\""
 
       stage.sampling {
         rate = 0.1
