@@ -1,10 +1,10 @@
 apiVersion: twingate.com/v1beta
 kind: TwingateResource
 metadata:
-  name: mattshan-dev-apps
+  name: apps
   namespace: twingate
 spec:
-  name: mattshan.dev apps
+  name: apps
   address: "*.mattshan.dev"
   isBrowserShortcutEnabled: false
   protocols:
@@ -16,5 +16,24 @@ spec:
           end: 80
         - start: 443
           end: 443
+    udp:
+      policy: RESTRICTED
+---
+apiVersion: twingate.com/v1beta
+kind: TwingateResource
+metadata:
+  name: k3s-api
+  namespace: twingate
+spec:
+  name: k3s-api
+  address: 192.168.1.163
+  isBrowserShortcutEnabled: false
+  protocols:
+    allowIcmp: false
+    tcp:
+      policy: RESTRICTED
+      ports:
+        - start: 6443
+          end: 6443
     udp:
       policy: RESTRICTED
