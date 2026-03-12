@@ -45,6 +45,17 @@ destinations:
 
 clusterMetrics:
   enabled: true
+  cadvisor:
+    metricsTuning:
+      excludeNamespaces:
+        - argocd
+        - longhorn-system
+        - twingate
+  kube-state-metrics:
+    namespacesDenylist:
+      - argocd
+      - longhorn-system
+      - twingate
   opencost:
     enabled: false
     metricsSource: grafana-cloud-metrics
@@ -57,19 +68,21 @@ clusterMetrics:
         external:
           url: https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom
   kepler:
-    enabled: true
+    enabled: false
 
 clusterEvents:
   enabled: true
+  excludeNamespaces:
+    - argocd
+    - longhorn-system
+    - twingate
 
 podLogs:
   enabled: true
-  extraLogProcessingStages: |
-    stage.match {
-      selector = "{namespace=\"longhorn-system\", container=\"csi-snapshotter\"} |~ \"Failed to watch.*(VolumeSnapshotClass|VolumeSnapshotContent)\""
-      action = "drop"
-      drop_counter_reason = "longhorn_snapshot_api_noise"
-    }
+  excludeNamespaces:
+    - argocd
+    - longhorn-system
+    - twingate
   
 applicationObservability:
   enabled: true
