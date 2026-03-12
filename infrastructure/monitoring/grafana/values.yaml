@@ -64,45 +64,13 @@ clusterEvents:
 
 podLogs:
   enabled: true
-  # Generated from alloy/pod-logs-extra-processing.alloy by scripts/sync-grafana-alloy-log-filters.ps1.
   extraLogProcessingStages: |
     stage.match {
       selector = "{namespace=\"longhorn-system\", container=\"csi-snapshotter\"} |~ \"Failed to watch.*(VolumeSnapshotClass|VolumeSnapshotContent)\""
       action = "drop"
       drop_counter_reason = "longhorn_snapshot_api_noise"
     }
-    
-    stage.match {
-      selector = "{namespace=\"twingate\"}"
-    
-      stage.regex {
-        expression = "^ANALYTICS .*?(?P<twingate_payload>\\{.*\\})$"
-      }
-    
-      stage.json {
-        source = "twingate_payload"
-        expressions = {
-          twingate_connector_name = "connector.name",
-          twingate_event_type = "event_type"
-        }
-      }
-    
-      stage.labels {
-        values = {
-          twingate_connector_name = "",
-          twingate_event_type = ""
-        }
-      }
-    
-      stage.match {
-        selector = "{twingate_connector_name=\"homelab-connector\", twingate_event_type=\"established_connection\"}"
-    
-        stage.sampling {
-          rate = 0.1
-          drop_counter_reason = "twingate_connector_established_connection_sampling"
-        }
-      }
-    }
+  
 applicationObservability:
   enabled: true
   receivers:
