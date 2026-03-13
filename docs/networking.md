@@ -8,6 +8,12 @@ Normal Cilium warnings and errors still ship through the Grafana monitoring stac
 
 If deeper Cilium troubleshooting is needed, temporarily set `debug.enabled: true`, sync the Cilium component, capture the needed logs, and then turn it back off.
 
+## Hubble UI
+
+The Cilium component now includes a Gateway API `HTTPRoute` in `infrastructure/networking/cilium/httproute.yaml` that exposes the in-cluster `hubble-ui` service from `kube-system` at `hubble.mattshan.dev` through `gateway-internal`.
+
+This repo only defines the route. DNS and any external/private access path still need to resolve `hubble.mattshan.dev` to the internal gateway IP `192.168.1.194` before the UI is reachable.
+
 ## Twingate Operator
 
 The Twingate operator lives in `infrastructure/networking/twingate` and is installed from the upstream OCI Helm chart through Kustomize.
@@ -52,7 +58,7 @@ If a Twingate-connected device cannot open an internal app hostname, first verif
 
 The cluster adds a CoreDNS custom server block in `kube-system` so `mattshan.dev` queries forward to the AdGuard Home DNS server at `192.168.1.107`.
 
-This keeps in-cluster resolution aligned with LAN clients and is especially important for the Twingate connector, which needs `argocd.mattshan.dev`, `headlamp.mattshan.dev`, `n8n.mattshan.dev`, `it-tools.mattshan.dev`, and `longhorn.mattshan.dev` to resolve to the internal gateway IP `192.168.1.194`.
+This keeps in-cluster resolution aligned with LAN clients and is especially important for the Twingate connector, which needs `argocd.mattshan.dev`, `headlamp.mattshan.dev`, `hubble.mattshan.dev`, `n8n.mattshan.dev`, `it-tools.mattshan.dev`, and `longhorn.mattshan.dev` to resolve to the internal gateway IP `192.168.1.194`.
 
 The manifest lives under `infrastructure/networking/coredns` and relies on the default k3s CoreDNS `import /etc/coredns/custom/*.server` hook.
 
