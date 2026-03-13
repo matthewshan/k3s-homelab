@@ -55,3 +55,5 @@ The cluster adds a CoreDNS custom server block in `kube-system` so `mattshan.dev
 This keeps in-cluster resolution aligned with LAN clients and is especially important for the Twingate connector, which needs `argocd.mattshan.dev`, `headlamp.mattshan.dev`, `n8n.mattshan.dev`, `it-tools.mattshan.dev`, and `longhorn.mattshan.dev` to resolve to the internal gateway IP `192.168.1.194`.
 
 The manifest lives under `infrastructure/networking/coredns` and relies on the default k3s CoreDNS `import /etc/coredns/custom/*.server` hook.
+
+k3s also ships a default `import /etc/coredns/custom/*.override` line. This repo intentionally keeps an empty `00-empty.override` entry in the same ConfigMap so CoreDNS does not emit repeated `No files matching import glob pattern` warnings when no override snippets are needed.

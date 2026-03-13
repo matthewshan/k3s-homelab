@@ -4,6 +4,7 @@ metadata:
   name: coredns-custom
   namespace: kube-system
 data:
+  00-empty.override: ""
   mattshan.server: |
     mattshan.dev:53 {
         errors
