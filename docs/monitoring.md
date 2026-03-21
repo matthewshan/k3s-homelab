@@ -1,5 +1,11 @@
 # Monitoring
 
+## Grafana Cloud secret management
+
+The `grafana-cloud-auth-grafana-k8s-monitoring` secret in the `monitoring` namespace is managed by an `ExternalSecret`. Seed the required keys (`metricsUsername`, `logsUsername`, `otlpUsername`, `password`) into Infisical project **`k3s-homelab`**, environment **`lab`** before syncing the Grafana component.
+
+See `infrastructure/monitoring/grafana/README.md` for the full key list and descriptions.
+
 ## Grafana Alloy log filter validation
 
 Grafana log filtering source for this repo lives in [infrastructure/monitoring/grafana/alloy/pod-logs-extra-processing.alloy](c:/Users/Matthew%20Shan/Code/k3s-homelab/infrastructure/monitoring/grafana/alloy/pod-logs-extra-processing.alloy). [infrastructure/monitoring/grafana/values.yaml](c:/Users/Matthew%20Shan/Code/k3s-homelab/infrastructure/monitoring/grafana/values.yaml) is generated from that file for the Helm chart input. YAML validation alone will not catch invalid `loki.process` selectors or other Alloy pipeline errors.

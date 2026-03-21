@@ -18,14 +18,14 @@ This repo only defines the route. DNS and any external/private access path still
 
 The Twingate operator lives in `infrastructure/networking/twingate` and is installed from the upstream OCI Helm chart through Kustomize.
 
-Before syncing it, create the `twingate-operator-auth` secret in the `twingate` namespace with:
+The `twingate-operator-auth` secret is managed by an `ExternalSecret`. Before syncing, seed the following keys into the Infisical project **`k3s-homelab`**, environment **`lab`**:
 
 - `TWINGATE_API_KEY`
 - `TWINGATE_REMOTE_NETWORK_ID`
 
 The operator does not require `TWINGATE_ACCESS_TOKEN` or `TWINGATE_REFRESH_TOKEN` at install time. Those are connector credentials and are only needed for manual connector workflows outside the operator-managed path.
 
-See `infrastructure/networking/twingate/README.md` for the secret creation command and upgrade notes.
+See `infrastructure/networking/twingate/README.md` for key descriptions and upgrade notes.
 
 ## Twingate cluster access
 

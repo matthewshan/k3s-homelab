@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ns.yaml
+  - twingate-operator-auth-externalsecret.yaml
   - connector.yaml
   - groups.yaml
   - resources.yaml
