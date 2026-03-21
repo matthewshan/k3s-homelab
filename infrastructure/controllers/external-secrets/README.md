@@ -8,23 +8,23 @@ Before syncing any `SecretStore`, `ClusterSecretStore`, or `ExternalSecret` reso
 
 ## Infisical (Universal Auth)
 
-The `ClusterSecretStore` in [infisical-cluster-secret-store.yaml](infisical-cluster-secret-store.yaml) configures Infisical as a provider using Universal Auth as described in the [external-secrets Infisical provider docs](https://external-secrets.io/latest/provider/infisical/#universal-auth).
+The checked-in [infisical-cluster-secret-store.yaml](infisical-cluster-secret-store.yaml) file configures an Infisical `ClusterSecretStore` using Universal Auth as described in the [external-secrets Infisical provider docs](https://external-secrets.io/latest/provider/infisical/#universal-auth).
 
-It reads credentials from a Kubernetes secret named `infisical-universal-auth` in the `external-secrets` namespace. Create that secret before syncing the store:
+The store reads credentials from a Kubernetes secret named `infisical-universal-auth` in the `external-secrets` namespace. Create that secret before syncing the store:
 
-```powershell
+```sh
 kubectl create namespace external-secrets
 
-kubectl create secret generic infisical-universal-auth `
-  -n external-secrets `
-  --from-literal=clientId='<your-infisical-client-id>' `
+kubectl create secret generic infisical-universal-auth \
+  -n external-secrets \
+  --from-literal=clientId='<your-infisical-client-id>' \
   --from-literal=clientSecret='<your-infisical-client-secret>'
 ```
 
-Obtain the **Client ID** and **Client Secret** from the Infisical dashboard under **Access Control → Machine Identities → Universal Auth**.
+Obtain the Client ID and Client Secret from the Infisical dashboard under Access Control > Machine Identities > Universal Auth.
 
-Once the secret exists, sync the `external-secrets` Argo CD application. The `ClusterSecretStore` will become `Ready` and any `ExternalSecret` resources that reference `infisical` can begin pulling secrets from Infisical.
+Once the secret exists, sync the `external-secrets` Argo CD application. The `ClusterSecretStore` can then become `Ready` and any `ExternalSecret` resources that reference `infisical` can begin pulling secrets from Infisical.
 
-The `hostAPI` in [infisical-cluster-secret-store.yaml](infisical-cluster-secret-store.yaml) defaults to `https://app.infisical.com/api` for Infisical Cloud. Update it to your own base URL (e.g., `https://infisical.example.com/api`) if you are running a self-hosted instance.
+The `hostAPI` in [infisical-cluster-secret-store.yaml](infisical-cluster-secret-store.yaml) defaults to `https://app.infisical.com/api` for Infisical Cloud. Update it to your own base URL, such as `https://infisical.example.com/api`, if you are running a self-hosted instance.
 
 Do not put provider credentials in [values.yaml](values.yaml).
