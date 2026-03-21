@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ns.yaml
+  - infisical-cluster-secret-store.yaml
 
 helmCharts:
   - name: external-secrets

@@ -1,22 +1,30 @@
 # External Secrets
 
-This component installs the External Secrets Operator from the Helm chart declared in [kustomization.yaml](c:/Users/Matthew%20Shan/Code/k3s-homelab/infrastructure/controllers/external-secrets/kustomization.yaml).
+This component installs the External Secrets Operator from the Helm chart declared in [kustomization.yaml](kustomization.yaml).
 
 The chart installation is Git-managed. Provider credentials are not.
 
 Before syncing any `SecretStore`, `ClusterSecretStore`, or `ExternalSecret` resources that depend on provider credentials, create the required Kubernetes secret in the `external-secrets` namespace and reference it from your store manifests.
 
-Example bootstrap flow:
+## Infisical (Universal Auth)
+
+The `ClusterSecretStore` in [infisical-cluster-secret-store.yaml](infisical-cluster-secret-store.yaml) configures Infisical as a provider using Universal Auth as described in the [external-secrets Infisical provider docs](https://external-secrets.io/latest/provider/infisical/#universal-auth).
+
+It reads credentials from a Kubernetes secret named `infisical-universal-auth` in the `external-secrets` namespace. Create that secret before syncing the store:
 
 ```powershell
 kubectl create namespace external-secrets
 
-kubectl create secret generic <provider-auth-secret> `
+kubectl create secret generic infisical-universal-auth `
   -n external-secrets `
-  --from-literal=<key1>='<value1>' `
-  --from-literal=<key2>='<value2>'
+  --from-literal=clientId='<your-infisical-client-id>' `
+  --from-literal=clientSecret='<your-infisical-client-secret>'
 ```
 
-Then add provider-specific `SecretStore` or `ClusterSecretStore` manifests to the repo so Argo CD manages the contract in Git.
+Obtain the **Client ID** and **Client Secret** from the Infisical dashboard under **Access Control → Machine Identities → Universal Auth**.
 
-Do not put provider credentials in [values.yaml](c:/Users/Matthew%20Shan/Code/k3s-homelab/infrastructure/controllers/external-secrets/values.yaml).
+Once the secret exists, sync the `external-secrets` Argo CD application. The `ClusterSecretStore` will become `Ready` and any `ExternalSecret` resources that reference `infisical` can begin pulling secrets from Infisical.
+
+The `hostAPI` in [infisical-cluster-secret-store.yaml](infisical-cluster-secret-store.yaml) defaults to `https://app.infisical.com/api` for Infisical Cloud. Update it to your own base URL (e.g., `https://infisical.example.com/api`) if you are running a self-hosted instance.
+
+Do not put provider credentials in [values.yaml](values.yaml).
