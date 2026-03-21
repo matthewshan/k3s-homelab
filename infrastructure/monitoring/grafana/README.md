@@ -10,9 +10,9 @@ Before syncing this component, seed the following keys into the Infisical projec
 
 | Infisical key | Kubernetes key | Description |
 |---|---|---|
-| `metricsUsername` | `metricsUsername` | Prometheus remote_write username |
-| `logsUsername` | `logsUsername` | Loki destination username |
-| `otlpUsername` | `otlpUsername` | OTLP destination and Alloy remote config username |
+| `metrics-username` | `metricsUsername` | Prometheus remote_write username |
+| `logs-username` | `logsUsername` | Loki destination username |
+| `otlp-username` | `otlpUsername` | OTLP destination and Alloy remote config username |
 | `password` | `password` | Shared Grafana Cloud API key for all destinations |
 
 The External Secrets bootstrap prerequisite (`infisical-universal-auth` in `external-secrets`) must exist before the `ClusterSecretStore` can become ready. See [infrastructure/controllers/external-secrets/README.md](../../controllers/external-secrets/README.md) for setup instructions.

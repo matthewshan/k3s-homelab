@@ -129,13 +129,13 @@ Then seed the following runtime secrets into the Infisical project **`k3s-homela
 | `api-token` | cert-manager Cloudflare DNS solver |
 | `email` | cert-manager Cloudflare DNS solver |
 | `credentials.json` | cloudflared tunnel |
-| `TWINGATE_API_KEY` | Twingate operator |
-| `TWINGATE_REMOTE_NETWORK_ID` | Twingate operator |
-| `metricsUsername` | Grafana Cloud metrics |
-| `logsUsername` | Grafana Cloud logs |
-| `otlpUsername` | Grafana Cloud OTLP / Alloy remote config |
+| `twingate-api-key` | Twingate operator |
+| `twingate-remote-network-id` | Twingate operator |
+| `metrics-username` | Grafana Cloud metrics |
+| `logs-username` | Grafana Cloud logs |
+| `otlp-username` | Grafana Cloud OTLP / Alloy remote config |
 | `password` | Grafana Cloud API key (shared across destinations) |
-| `N8N_ENCRYPTION_KEY` | n8n credential encryption |
+| `n8n-encryption-key` | n8n credential encryption |
 
 See [infrastructure/controllers/external-secrets/README.md](../infrastructure/controllers/external-secrets/README.md) for full details.
 

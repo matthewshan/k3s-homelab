@@ -10,8 +10,8 @@ Before syncing this component, seed the following keys into the Infisical projec
 
 | Infisical key | Description |
 |---|---|
-| `TWINGATE_API_KEY` | API token with `Read/Write/Provision` permissions |
-| `TWINGATE_REMOTE_NETWORK_ID` | Twingate Remote Network GraphQL ID |
+| `twingate-api-key` | API token with `Read/Write/Provision` permissions |
+| `twingate-remote-network-id` | Twingate Remote Network GraphQL ID |
 
 The External Secrets bootstrap prerequisite (`infisical-universal-auth` in `external-secrets`) must exist before the `ClusterSecretStore` can become ready. See [infrastructure/controllers/external-secrets/README.md](../../controllers/external-secrets/README.md) for setup instructions.
 

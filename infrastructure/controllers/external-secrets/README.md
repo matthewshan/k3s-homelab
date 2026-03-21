@@ -32,13 +32,13 @@ Before syncing any component that creates an `ExternalSecret`, seed the correspo
 | `api-token` | `cert-manager` | `cloudflare-api-token` | `api-token` |
 | `email` | `cert-manager` | `cloudflare-api-token` | `email` |
 | `credentials.json` | `cloudflared` | `tunnel-credentials` | `credentials.json` |
-| `TWINGATE_API_KEY` | `twingate` | `twingate-operator-auth` | `TWINGATE_API_KEY` |
-| `TWINGATE_REMOTE_NETWORK_ID` | `twingate` | `twingate-operator-auth` | `TWINGATE_REMOTE_NETWORK_ID` |
-| `metricsUsername` | `monitoring` | `grafana-cloud-auth-grafana-k8s-monitoring` | `metricsUsername` |
-| `logsUsername` | `monitoring` | `grafana-cloud-auth-grafana-k8s-monitoring` | `logsUsername` |
-| `otlpUsername` | `monitoring` | `grafana-cloud-auth-grafana-k8s-monitoring` | `otlpUsername` |
+| `twingate-api-key` | `twingate` | `twingate-operator-auth` | `TWINGATE_API_KEY` |
+| `twingate-remote-network-id` | `twingate` | `twingate-operator-auth` | `TWINGATE_REMOTE_NETWORK_ID` |
+| `metrics-username` | `monitoring` | `grafana-cloud-auth-grafana-k8s-monitoring` | `metricsUsername` |
+| `logs-username` | `monitoring` | `grafana-cloud-auth-grafana-k8s-monitoring` | `logsUsername` |
+| `otlp-username` | `monitoring` | `grafana-cloud-auth-grafana-k8s-monitoring` | `otlpUsername` |
 | `password` | `monitoring` | `grafana-cloud-auth-grafana-k8s-monitoring` | `password` |
-| `N8N_ENCRYPTION_KEY` | `n8n` | `n8n-secret` | `N8N_ENCRYPTION_KEY` |
+| `n8n-encryption-key` | `n8n` | `n8n-secret` | `N8N_ENCRYPTION_KEY` |
 
 ## Rollout order
 

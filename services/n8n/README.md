@@ -8,7 +8,7 @@ Before syncing this component, seed the following key into the Infisical project
 
 | Infisical key | Kubernetes key | Description |
 |---|---|---|
-| `N8N_ENCRYPTION_KEY` | `N8N_ENCRYPTION_KEY` | Long random string used to encrypt n8n credentials |
+| `n8n-encryption-key` | `N8N_ENCRYPTION_KEY` | Long random string used to encrypt n8n credentials |
 
 The External Secrets bootstrap prerequisite (`infisical-universal-auth` in `external-secrets`) must exist before the `ClusterSecretStore` can become ready. See [infrastructure/controllers/external-secrets/README.md](../../infrastructure/controllers/external-secrets/README.md) for setup instructions.
 
