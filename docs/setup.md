@@ -107,7 +107,39 @@ Copy output to whatever file kubectl uses to connect. Update IP Address to the n
 
 Then test locally with `kubectl get nodes`
 
-### 5. ArgoCD
+### 5. External Secrets bootstrap
+
+Before syncing other components, create the one manual bootstrap secret that External Secrets needs to reach Infisical:
+
+```sh
+kubectl create namespace external-secrets
+
+kubectl create secret generic infisical-universal-auth \
+  -n external-secrets \
+  --from-literal=clientId='<your-infisical-client-id>' \
+  --from-literal=clientSecret='<your-infisical-client-secret>'
+```
+
+Obtain the Client ID and Client Secret from the Infisical dashboard under **Access Control > Machine Identities > Universal Auth**.
+
+Then seed the following runtime secrets into the Infisical project **`k3s-homelab`**, environment **`lab`**, before syncing the dependent components:
+
+| Infisical key | Used by |
+|---|---|
+| `api-token` | cert-manager Cloudflare DNS solver |
+| `email` | cert-manager Cloudflare DNS solver |
+| `credentials.json` | cloudflared tunnel |
+| `TWINGATE_API_KEY` | Twingate operator |
+| `TWINGATE_REMOTE_NETWORK_ID` | Twingate operator |
+| `metricsUsername` | Grafana Cloud metrics |
+| `logsUsername` | Grafana Cloud logs |
+| `otlpUsername` | Grafana Cloud OTLP / Alloy remote config |
+| `password` | Grafana Cloud API key (shared across destinations) |
+| `N8N_ENCRYPTION_KEY` | n8n credential encryption |
+
+See [infrastructure/controllers/external-secrets/README.md](../infrastructure/controllers/external-secrets/README.md) for full details.
+
+### 6. ArgoCD
 
 ```
 # Gateway API CRDs
@@ -134,50 +166,47 @@ kubectl -n argocd patch secret argocd-secret \
 
 ```
 
-### 6. CloudFlare Tunnel
+### 7. CloudFlare Tunnel
 ```
-export CLOUDFLARE_API_TOKEN="your-api-token-here"
-export CLOUDFLARE_EMAIL="your-cloudflare-email"
-export DOMAIN="yourdomain.com"
-export TUNNEL_NAME="k3s-cluster"  
+export TUNNEL_NAME="rpi5"
 
 wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
 sudo dpkg -i cloudflared-linux-amd64.deb
 
 cloudflared tunnel login
-
 cloudflared tunnel create $TUNNEL_NAME
 cloudflared tunnel token --cred-file tunnel-creds.json $TUNNEL_NAME
+```
 
-kubectl create namespace cloudflared
+Seed the tunnel credentials file content into Infisical under the `k3s-homelab / lab` environment:
+- Key: `credentials.json`
+- Value: the contents of `tunnel-creds.json`
 
-kubectl create secret generic tunnel-credentials \
-  --namespace=cloudflared \
-  --from-file=credentials.json=tunnel-creds.json
-
-# SECURITY: Destroy local credentials ( Optional )
+```
+# SECURITY: Destroy local credentials after seeding into Infisical
 rm -v tunnel-creds.json && echo "Credentials file removed"
+```
 
-# Configure DNS
+The `tunnel-credentials` Kubernetes secret in the `cloudflared` namespace will be created automatically by External Secrets once you sync the `cloudflared` Argo CD application.
+
+Configure DNS:
+```
+export DOMAIN="yourdomain.com"
 TUNNEL_ID=$(cloudflared tunnel list | grep $TUNNEL_NAME | awk '{print $1}')
 cloudflared tunnel route dns $TUNNEL_ID "*.$DOMAIN"
 ```
 
-### 7. Certificate Management
-```bash
-# Create cert-manager secrets
-kubectl create namespace cert-manager
-kubectl create secret generic cloudflare-api-token -n cert-manager \
-  --from-literal=api-token=$CLOUDFLARE_API_TOKEN \
-  --from-literal=email=$CLOUDFLARE_EMAIL
+### 8. Certificate Management
 
-# Verify secrets
-kubectl get secret cloudflare-api-token -n cert-manager -o jsonpath='{.data.email}' | base64 -d
-kubectl get secret cloudflare-api-token -n cert-manager -o jsonpath='{.data.api-token}' | base64 -d
-```
+The `cloudflare-api-token` secret in the `cert-manager` namespace is created automatically by External Secrets from Infisical. Seed the following keys into Infisical (`k3s-homelab / lab`) before syncing cert-manager:
 
-### 8. Let Argo go wild!
-Additonally, look into `infrastructure\monitoring\grafana\README.md` and `services\n8n\README.md`
+- `api-token`: your Cloudflare API token
+- `email`: your Cloudflare account email
+
+No manual `kubectl create secret` step is needed for cert-manager.
+
+### 9. Let Argo go wild!
+Additonally, look into `infrastructure\controllers\external-secrets\README.md` for the full Infisical seeding checklist before syncing.
 ```sh
 kubectl apply -f infrastructure/controllers/argocd/projects.yaml
 kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd

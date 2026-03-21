@@ -1,28 +1,27 @@
 # n8n
 
-Create the runtime secret before syncing or starting the n8n deployment.
+## Secret provisioning via Infisical
 
-Required secret:
+The `n8n-secret` is managed by an `ExternalSecret` in [n8n-secret-externalsecret.yaml](n8n-secret-externalsecret.yaml). External Secrets pulls the value from Infisical and creates the Kubernetes secret automatically.
 
-- Name: `n8n-secret`
-- Namespace: `n8n`
-- Key: `N8N_ENCRYPTION_KEY`
+Before syncing this component, seed the following key into the Infisical project **`k3s-homelab`**, environment **`lab`**:
 
-Example:
+| Infisical key | Kubernetes key | Description |
+|---|---|---|
+| `N8N_ENCRYPTION_KEY` | `N8N_ENCRYPTION_KEY` | Long random string used to encrypt n8n credentials |
 
-```powershell
-kubectl create namespace n8n
-kubectl create secret generic n8n-secret `
-  -n n8n `
-  --from-literal=N8N_ENCRYPTION_KEY='<replace-with-a-long-random-string>'
-```
+The External Secrets bootstrap prerequisite (`infisical-universal-auth` in `external-secrets`) must exist before the `ClusterSecretStore` can become ready. See [infrastructure/controllers/external-secrets/README.md](../../infrastructure/controllers/external-secrets/README.md) for setup instructions.
 
-If the namespace already exists, run only the secret command.
-
-Generate a strong key with PowerShell:
+Generate a strong key with PowerShell before seeding it into Infisical:
 
 ```powershell
 [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+```
+
+Or with bash:
+
+```bash
+openssl rand -base64 32
 ```
 
 The deployment in this folder expects that secret to exist before the pod starts.

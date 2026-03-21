@@ -1,33 +1,23 @@
 # Grafana k8s Monitoring
 
-This component deploys the Grafana `k8s-monitoring` Helm chart from [kustomization.yaml](c:/Users/Matthew%20Shan/Code/k3s-homelab/infrastructure/monitoring/grafana/kustomization.yaml) using the values in [values.yaml](c:/Users/Matthew%20Shan/Code/k3s-homelab/infrastructure/monitoring/grafana/values.yaml).
+This component deploys the Grafana `k8s-monitoring` Helm chart from [kustomization.yaml](kustomization.yaml) using the values in [values.yaml](values.yaml).
 
-Before Argo CD syncs the `grafana` infrastructure application, create the required secret in the `monitoring` namespace.
+## Secret provisioning via Infisical
 
-Required secret:
+The `grafana-cloud-auth-grafana-k8s-monitoring` secret is managed by an `ExternalSecret` in [grafana-cloud-auth-externalsecret.yaml](grafana-cloud-auth-externalsecret.yaml). External Secrets pulls the values from Infisical and creates the Kubernetes secret automatically.
 
-- `grafana-cloud-auth-grafana-k8s-monitoring` with keys `metricsUsername`, `logsUsername`, `otlpUsername`, and `password`
+Before syncing this component, seed the following keys into the Infisical project **`k3s-homelab`**, environment **`lab`**:
 
-Key usage:
+| Infisical key | Kubernetes key | Description |
+|---|---|---|
+| `metricsUsername` | `metricsUsername` | Prometheus remote_write username |
+| `logsUsername` | `logsUsername` | Loki destination username |
+| `otlpUsername` | `otlpUsername` | OTLP destination and Alloy remote config username |
+| `password` | `password` | Shared Grafana Cloud API key for all destinations |
 
-- `metricsUsername` is used by the Prometheus remote_write destination.
-- `logsUsername` is used by the Loki destination.
-- `otlpUsername` is used by the OTLP destination and all Alloy remote configuration clients.
-- `password` is shared across all of them.
+The External Secrets bootstrap prerequisite (`infisical-universal-auth` in `external-secrets`) must exist before the `ClusterSecretStore` can become ready. See [infrastructure/controllers/external-secrets/README.md](../../controllers/external-secrets/README.md) for setup instructions.
 
-Example bootstrap commands:
-
-```bash
-kubectl create namespace monitoring
-
-kubectl create secret generic grafana-cloud-auth-grafana-k8s-monitoring -n monitoring \
-  --from-literal=metricsUsername="<metrics-username>" \
-  --from-literal=logsUsername="<logs-username>" \
-  --from-literal=otlpUsername="<otlp-username>" \
-  --from-literal=password="<grafana-cloud-api-key>"
-```
-
-After the secrets exist, refresh the `infrastructure-components` ApplicationSet or let Argo CD reconcile normally.
+After the secrets are seeded and External Secrets reconciles, refresh the `infrastructure-components` ApplicationSet or let Argo CD reconcile normally.
 
 No extra pod log processing stages are currently defined in repo. Pod log collection excludes the `argocd`, `longhorn-system`, and `twingate` namespaces entirely because this repo does not currently need those logs in Grafana Loki.
 
