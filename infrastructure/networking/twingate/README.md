@@ -2,24 +2,20 @@
 
 This directory installs the upstream Twingate Kubernetes Operator Helm chart through Kustomize.
 
-## Pre-create the operator secret
+## Secret provisioning via Infisical
 
-Before syncing this component, create the `twingate-operator-auth` secret in the `twingate` namespace:
+The `twingate-operator-auth` secret is managed by an `ExternalSecret` in [twingate-operator-auth-externalsecret.yaml](twingate-operator-auth-externalsecret.yaml). External Secrets pulls the values from Infisical and creates the Kubernetes secret automatically.
 
-```powershell
-kubectl create namespace twingate
-kubectl create secret generic twingate-operator-auth `
-  --namespace twingate `
-  --from-literal=TWINGATE_API_KEY='<twingate-api-key>' `
-  --from-literal=TWINGATE_REMOTE_NETWORK_ID='<remote-network-id>'
-```
+Before syncing this component, seed the following keys into the Infisical project **`k3s-homelab`**, environment **`lab`**:
 
-Required secret keys:
+| Infisical key | Description |
+|---|---|
+| `twingate-api-key` | API token with `Read/Write/Provision` permissions |
+| `twingate-remote-network-id` | Twingate Remote Network GraphQL ID |
 
-- `TWINGATE_API_KEY`: API token with `Read/Write/Provision` permissions.
-- `TWINGATE_REMOTE_NETWORK_ID`: the Twingate Remote Network GraphQL ID used by the operator.
+The External Secrets bootstrap prerequisite (`infisical-universal-auth` in `external-secrets`) must exist before the `ClusterSecretStore` can become ready. See [infrastructure/controllers/external-secrets/README.md](../../controllers/external-secrets/README.md) for setup instructions.
 
-`values.yaml` references this secret through `twingateOperator.existingAPIKeySecret` and `twingateOperator.existingRemoteNetworkIdSecret`, so no credentials are committed to Git.
+`values.yaml` references the Kubernetes secret through `twingateOperator.existingAPIKeySecret` and `twingateOperator.existingRemoteNetworkIdSecret`, so no credentials are committed to Git.
 
 ## About access and refresh tokens
 

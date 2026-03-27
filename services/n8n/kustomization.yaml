@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - httproute.yaml
+  - n8n-secret-externalsecret.yaml
   - ns.yaml
   - pvc.yaml
   - service.yaml

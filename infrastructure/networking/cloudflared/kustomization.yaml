@@ -10,6 +10,7 @@ namespace: cloudflared
 
 resources:
   - ns.yaml
+  - tunnel-credentials-externalsecret.yaml
   - daemon-set.yaml
 
 generatorOptions:
@@ -23,6 +24,5 @@ configMapGenerator:
       annotations:
         argocd.argoproj.io/sync-wave: "-2"
 
-# The secret will be created manually via kubectl
-# ... existing code ...
+
   
