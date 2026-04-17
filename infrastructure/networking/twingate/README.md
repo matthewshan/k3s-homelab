@@ -2,17 +2,14 @@
 
 This directory installs the upstream Twingate Kubernetes Operator Helm chart through Kustomize.
 
-## Pre-create the operator secret
+## Operator secret source
 
-Before syncing this component, create the `twingate-operator-auth` secret in the `twingate` namespace:
+Before syncing this component, make sure the `external-secrets` infrastructure component is healthy and Infisical contains the required source keys:
 
-```powershell
-kubectl create namespace twingate
-kubectl create secret generic twingate-operator-auth `
-  --namespace twingate `
-  --from-literal=TWINGATE_API_KEY='<twingate-api-key>' `
-  --from-literal=TWINGATE_REMOTE_NETWORK_ID='<remote-network-id>'
-```
+- `twingate-api-key`
+- `twingate-remote-network-id`
+
+This directory now includes an `ExternalSecret` that creates the `twingate-operator-auth` secret in the `twingate` namespace.
 
 Required secret keys:
 

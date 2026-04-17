@@ -1,0 +1,28 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: grafana-cloud-auth-grafana-k8s-monitoring
+  namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: infisical
+  target:
+    name: grafana-cloud-auth-grafana-k8s-monitoring
+    creationPolicy: Owner
+  data:
+    - secretKey: metricsUsername
+      remoteRef:
+        key: grafana-cloud-metrics-username
+    - secretKey: logsUsername
+      remoteRef:
+        key: grafana-cloud-logs-username
+    - secretKey: otlpUsername
+      remoteRef:
+        key: grafana-cloud-otlp-username
+    - secretKey: password
+      remoteRef:
+        key: grafana-cloud-password

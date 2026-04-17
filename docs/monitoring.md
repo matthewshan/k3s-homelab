@@ -42,6 +42,8 @@ The source file [infrastructure/monitoring/grafana/alloy/pod-logs-extra-processi
 
 ## Grafana usage tuning
 
+The Grafana component's runtime auth secret is now intended to be reconciled from Infisical through the `ExternalSecret` in `infrastructure/monitoring/grafana`. Keep the flat Infisical keys `grafana-cloud-metrics-username`, `grafana-cloud-logs-username`, `grafana-cloud-otlp-username`, and `grafana-cloud-password` up to date rather than manually creating the Kubernetes secret.
+
 The Grafana Kubernetes monitoring values intentionally trade breadth for lower Grafana Cloud usage in a few places:
 
 - `clusterMetrics.kepler.enabled` stays disabled so energy metrics do not consume active-series budget.

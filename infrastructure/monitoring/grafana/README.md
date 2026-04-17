@@ -2,9 +2,11 @@
 
 This component deploys the Grafana `k8s-monitoring` Helm chart from [kustomization.yaml](c:/Users/Matthew%20Shan/Code/k3s-homelab/infrastructure/monitoring/grafana/kustomization.yaml) using the values in [values.yaml](c:/Users/Matthew%20Shan/Code/k3s-homelab/infrastructure/monitoring/grafana/values.yaml).
 
-Before Argo CD syncs the `grafana` infrastructure application, create the required secret in the `monitoring` namespace.
+Before Argo CD syncs this component, the `external-secrets` infrastructure component and the `infisical` `ClusterSecretStore` must already be healthy.
 
-Required secret:
+This component expects an `ExternalSecret` in this directory to create the required Kubernetes secret in the `monitoring` namespace from Infisical.
+
+Required Kubernetes secret contract:
 
 - `grafana-cloud-auth-grafana-k8s-monitoring` with keys `metricsUsername`, `logsUsername`, `otlpUsername`, and `password`
 
@@ -15,19 +17,14 @@ Key usage:
 - `otlpUsername` is used by the OTLP destination and all Alloy remote configuration clients.
 - `password` is shared across all of them.
 
-Example bootstrap commands:
+Infisical source keys:
 
-```bash
-kubectl create namespace monitoring
+- `grafana-cloud-metrics-username`
+- `grafana-cloud-logs-username`
+- `grafana-cloud-otlp-username`
+- `grafana-cloud-password`
 
-kubectl create secret generic grafana-cloud-auth-grafana-k8s-monitoring -n monitoring \
-  --from-literal=metricsUsername="<metrics-username>" \
-  --from-literal=logsUsername="<logs-username>" \
-  --from-literal=otlpUsername="<otlp-username>" \
-  --from-literal=password="<grafana-cloud-api-key>"
-```
-
-After the secrets exist, refresh the `infrastructure-components` ApplicationSet or let Argo CD reconcile normally.
+After those Infisical keys and the External Secrets bootstrap are in place, let Argo CD reconcile normally or refresh the `infrastructure-components` ApplicationSet.
 
 No extra pod log processing stages are currently defined in repo. Pod log collection excludes the `argocd`, `longhorn-system`, and `twingate` namespaces entirely because this repo does not currently need those logs in Grafana Loki.
 

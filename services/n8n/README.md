@@ -1,28 +1,13 @@
 # n8n
 
-Create the runtime secret before syncing or starting the n8n deployment.
+Before syncing or starting the n8n deployment, make sure the `external-secrets` infrastructure component is healthy and Infisical contains the required source key `n8n-encryption-key`.
 
-Required secret:
+Required Kubernetes secret contract:
 
 - Name: `n8n-secret`
 - Namespace: `n8n`
 - Key: `N8N_ENCRYPTION_KEY`
 
-Example:
+This directory now includes an `ExternalSecret` that creates `n8n-secret` from Infisical.
 
-```powershell
-kubectl create namespace n8n
-kubectl create secret generic n8n-secret `
-  -n n8n `
-  --from-literal=N8N_ENCRYPTION_KEY='<replace-with-a-long-random-string>'
-```
-
-If the namespace already exists, run only the secret command.
-
-Generate a strong key with PowerShell:
-
-```powershell
-[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
-```
-
-The deployment in this folder expects that secret to exist before the pod starts.
+The deployment in this folder still expects that secret to exist before the pod starts; the difference is that the secret should now be reconciled by External Secrets rather than created manually.
