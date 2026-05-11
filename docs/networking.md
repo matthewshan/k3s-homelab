@@ -18,6 +18,10 @@ This repo only defines the route. DNS and any external/private access path still
 
 The Twingate operator lives in `infrastructure/networking/twingate` and is installed from the upstream OCI Helm chart through Kustomize.
 
+The Helm chart version tracks the operator release itself. Connector runtime versions are separate from the chart and, if you ever need to pin them, are controlled on `TwingateConnector` resources rather than in the chart version field.
+
+This repo currently pins the connector image tag in `infrastructure/networking/twingate/connector.yaml` so connector upgrades remain an explicit Git change. Upstream also supports `spec.imagePolicy` on `TwingateConnector` if you want the operator to check Docker Hub and keep connectors updated on a schedule instead.
+
 Before syncing it, make sure External Secrets is healthy and Infisical contains the source keys for the `twingate-operator-auth` secret:
 
 - `TWINGATE_API_KEY`

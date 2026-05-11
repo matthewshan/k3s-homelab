@@ -33,6 +33,7 @@ If you ever need a manual connector secret, the expected keys are:
 
 - Set `twingateOperator.network` in `values.yaml` to your Twingate network slug before syncing.
 - When upgrading the chart, review upstream CRD changes because Helm does not automatically update CRDs for existing installs.
+- This repo pins the connector runtime in `connector.yaml` with `spec.image.tag` so the desired connector version stays explicit in Git. If you later want operator-managed auto-updates instead, switch to `spec.imagePolicy`, which is the upstream mechanism for scheduled connector updates.
 
 ## Managed access objects in this repo
 
