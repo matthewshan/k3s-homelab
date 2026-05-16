@@ -31,4 +31,5 @@ Operational notes:
 - The Temporal gRPC frontend stays cluster-internal on the `temporal-frontend` service at port `7233`.
 - The shared PostgreSQL component bootstraps the `temporal` and `temporal_visibility` databases.
 - A `secret-ready-gate` Job in sync wave `-1` blocks Temporal chart resources until `ExternalSecret/temporal-db` is `Ready` and `Secret/temporal-db` exists.
+- Argo CD is configured to replace that gate Job on retries, and Kubernetes cleans up finished runs after 5 minutes so failed gates do not stay stuck indefinitely.
 - `numHistoryShards` cannot be changed in-place later. If you outgrow `4`, plan on a fresh deployment or a migration.
