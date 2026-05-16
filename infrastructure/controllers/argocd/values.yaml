@@ -13,6 +13,32 @@ configs:
         - .spec.data[]?.remoteRef.conversionStrategy
         - .spec.data[]?.remoteRef.decodingStrategy
         - .spec.data[]?.remoteRef.metadataPolicy
+    resource.customizations.health.external-secrets.io_ExternalSecret: |
+      hs = {}
+      if obj.status == nil then
+        hs.status = "Progressing"
+        hs.message = "ExternalSecret initialization pending"
+        return hs
+      end
+      if obj.status.conditions ~= nil then
+        for _, condition in ipairs(obj.status.conditions) do
+          if condition.type == "Ready" then
+            if condition.status == "True" then
+              hs.status = "Healthy"
+              hs.message = condition.message or "ExternalSecret is Ready"
+              return hs
+            end
+            if condition.status == "False" then
+              hs.status = "Degraded"
+              hs.message = condition.message or "ExternalSecret is not Ready"
+              return hs
+            end
+          end
+        end
+      end
+      hs.status = "Progressing"
+      hs.message = "Waiting for ExternalSecret Ready condition"
+      return hs
     resource.customizations.ignoreDifferences.apps_StatefulSet: |
       jqPathExpressions:
         - .spec.volumeClaimTemplates[]?.metadata.creationTimestamp

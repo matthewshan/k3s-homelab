@@ -4,6 +4,7 @@ namespace: temporal
 resources:
   - httproute.yaml
   - external-secret.yaml
+  - secret-ready-gate.yaml
 helmCharts:
   - name: temporal
     repo: https://go.temporal.io/helm-charts
