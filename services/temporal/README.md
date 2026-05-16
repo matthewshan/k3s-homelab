@@ -24,12 +24,12 @@ This service also expects Infisical to contain this key:
 This directory includes an `ExternalSecret` that creates the `temporal-db` secret in the `temporal` namespace with these keys:
 
 - `postgres-temporal-user-password` mapped from `postgres-temporal-user-password`
-- a `secret-ready-gate` Job that blocks the Temporal sync wave until `Secret/temporal-db` exists
 
 Operational notes:
 
 - Temporal Web is exposed internally at `https://temporal.mattshan.dev` through `gateway-internal`.
 - The Temporal gRPC frontend stays cluster-internal on the `temporal-frontend` service at port `7233`.
 - The shared PostgreSQL component bootstraps the `temporal` and `temporal_visibility` databases.
+- A `secret-ready-gate` Job in sync wave `-1` blocks Temporal chart resources until `Secret/temporal-db` exists.
 - If Temporal dependencies are ever split into a separate Argo CD `Application`, keep that dependency app on a lower sync wave than the main Temporal app.
 - `numHistoryShards` cannot be changed in-place later. If you outgrow `4`, plan on a fresh deployment or a migration.
