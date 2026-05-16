@@ -65,7 +65,7 @@ Move the repo’s manually bootstrapped runtime secrets into Infisical and sync 
 - `/home/matthew/Code/k3s-homelab/infrastructure/controllers/external-secrets/README.md` — rewrite bootstrap guidance around Infisical seeding plus the one remaining manual bootstrap secret
 - `/home/matthew/Code/k3s-homelab/infrastructure/controllers/external-secrets/infisical-cluster-secret-store.yaml` — verify project/environment assumptions only; no secret material here
 - `/home/matthew/Code/k3s-homelab/infrastructure/controllers/cert-manager/kustomization.yaml` — include the cert-manager ExternalSecret manifest
-- `/home/matthew/Code/k3s-homelab/infrastructure/controllers/cert-manager/cloudflare-secret.yaml` — likely replace or rename this placeholder Secret manifest into the ExternalSecret resource for `cloudflare-api-token`
+- `/home/matthew/Code/k3s-homelab/infrastructure/controllers/cert-manager/external-secret.yaml` — likely replace or rename this placeholder Secret manifest into the ExternalSecret resource for `cloudflare-api-token`
 - `/home/matthew/Code/k3s-homelab/infrastructure/controllers/cert-manager/cluster-issuer.yaml` — preserve the existing `cloudflare-api-token` reference and confirm ordering expectations
 - `/home/matthew/Code/k3s-homelab/infrastructure/networking/cloudflared/kustomization.yaml` — include the tunnel credentials ExternalSecret and remove the “manual secret” comment
 - `/home/matthew/Code/k3s-homelab/infrastructure/networking/cloudflared/daemon-set.yaml` — keep the `tunnel-credentials` mount contract unchanged

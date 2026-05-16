@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - ns.yaml
-  - operator-auth.yaml
+  - external-secret.yaml
   - connector.yaml
   - groups.yaml
   - resources.yaml

@@ -17,6 +17,8 @@ spec:
   template:
     metadata:
       name: '{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "-1"
       labels:
         type: infrastructure
     spec:

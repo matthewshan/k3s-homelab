@@ -1,0 +1,30 @@
+auth:
+  username: temporal
+  database: temporal
+  existingSecret: postgresql-auth
+  secretKeys:
+    # Built-in PostgreSQL admin account (`postgres`).
+    adminPasswordKey: postgres-password
+    # Current application account bootstrapped for Temporal (`temporal`).
+    userPasswordKey: postgres-temporal-user-password
+
+primary:
+  persistence:
+    enabled: true
+    storageClass: longhorn
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # This bootstrap SQL only runs when PostgreSQL initializes a fresh data directory.
+  initdb:
+    scripts:
+      01-create-temporal-visibility.sql: |
+        CREATE DATABASE temporal_visibility OWNER temporal;
+
+metrics:
+  enabled: false

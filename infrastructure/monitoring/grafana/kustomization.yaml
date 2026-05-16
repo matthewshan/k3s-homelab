@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - ns.yaml
-  - grafana-cloud-auth.yaml
+  - external-secret.yaml
 
 helmCharts:
   - name: k8s-monitoring

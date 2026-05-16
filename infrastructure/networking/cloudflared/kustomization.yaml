@@ -10,7 +10,7 @@ namespace: cloudflared
 
 resources:
   - ns.yaml
-  - tunnel-credentials.yaml
+  - external-secret.yaml
   - daemon-set.yaml
 
 generatorOptions:

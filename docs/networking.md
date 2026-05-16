@@ -58,6 +58,14 @@ The Twingate resources intentionally preserve the existing internal routing mode
 
 If a Twingate-connected device cannot open an internal app hostname, first verify that the connectors resolve `*.mattshan.dev` to the internal gateway IP rather than a public Cloudflare path.
 
+## Temporal Web UI
+
+The repo now exposes the Temporal web UI from `services/temporal` at `temporal.mattshan.dev` through `gateway-internal`.
+
+Only the web UI is routed through Gateway API. The Temporal gRPC frontend remains cluster-internal on the `temporal-frontend` service so SDK and worker traffic stays inside the cluster network.
+
+This service also depends on the shared PostgreSQL infrastructure component at `infrastructure/storage/postgresql` plus an External Secrets-managed secret named `temporal-db` in the `temporal` namespace. Before syncing it, make sure the `external-secrets` infrastructure component is healthy, the shared PostgreSQL component is healthy, and Infisical contains `postgres-temporal-user-password` for the `temporal` application user.
+
 ## CoreDNS forward for mattshan.dev
 
 The cluster adds a CoreDNS custom server block in `kube-system` so `mattshan.dev` queries forward to the AdGuard Home DNS server at `192.168.1.107`.

@@ -1,0 +1,101 @@
+server:
+  config:
+    persistence:
+      defaultStore: default
+      visibilityStore: visibility
+      numHistoryShards: 4
+      datastores:
+        default:
+          sql:
+            createDatabase: false
+            manageSchema: true
+            pluginName: postgres12
+            driverName: postgres12
+            databaseName: temporal
+            connectAddr: postgresql.postgresql.svc.cluster.local:5432
+            connectProtocol: tcp
+            user: temporal
+            existingSecret: temporal-db
+            # Password for the `temporal` application user on the shared PostgreSQL service.
+            secretKey: postgres-temporal-user-password
+            maxConns: 10
+            maxIdleConns: 5
+            maxConnLifetime: 1h
+        visibility:
+          sql:
+            createDatabase: false
+            manageSchema: true
+            pluginName: postgres12
+            driverName: postgres12
+            databaseName: temporal_visibility
+            connectAddr: postgresql.postgresql.svc.cluster.local:5432
+            connectProtocol: tcp
+            user: temporal
+            existingSecret: temporal-db
+            # Password for the same `temporal` application user used by the visibility database.
+            secretKey: postgres-temporal-user-password
+            maxConns: 5
+            maxIdleConns: 2
+            maxConnLifetime: 1h
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  frontend:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+  history:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  matching:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+  worker:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+
+admintools:
+  enabled: false
+
+web:
+  enabled: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 150m
+      memory: 128Mi
+
+schema:
+  useHelmHooks: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 150m
+      memory: 128Mi
