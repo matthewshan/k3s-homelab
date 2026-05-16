@@ -30,5 +30,5 @@ Operational notes:
 - Temporal Web is exposed internally at `https://temporal.mattshan.dev` through `gateway-internal`.
 - The Temporal gRPC frontend stays cluster-internal on the `temporal-frontend` service at port `7233`.
 - The shared PostgreSQL component bootstraps the `temporal` and `temporal_visibility` databases.
-- A `secret-ready-gate` Job in sync wave `-1` blocks Temporal chart resources until `Secret/temporal-db` exists.
+- A `secret-ready-gate` Job in sync wave `-1` blocks Temporal chart resources until `ExternalSecret/temporal-db` is `Ready` and `Secret/temporal-db` exists.
 - `numHistoryShards` cannot be changed in-place later. If you outgrow `4`, plan on a fresh deployment or a migration.
