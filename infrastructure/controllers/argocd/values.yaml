@@ -13,6 +13,9 @@ configs:
         - .spec.data[]?.remoteRef.conversionStrategy
         - .spec.data[]?.remoteRef.decodingStrategy
         - .spec.data[]?.remoteRef.metadataPolicy
+    resource.customizations.ignoreDifferences.apps_StatefulSet: |
+      jqPathExpressions:
+        - .spec.volumeClaimTemplates[]?.metadata.creationTimestamp
     resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition: |
       jqPathExpressions:
         - >

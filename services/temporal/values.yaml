@@ -91,7 +91,7 @@ web:
       memory: 128Mi
 
 schema:
-  useHelmHooks: true
+  useHelmHooks: false
   resources:
     requests:
       cpu: 25m
