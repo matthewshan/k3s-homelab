@@ -7,12 +7,12 @@ spec:
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      name: gateway-external
+      name: gateway-internal
       namespace: gateway
       sectionName: http
     - group: gateway.networking.k8s.io
       kind: Gateway
-      name: gateway-external
+      name: gateway-internal
       namespace: gateway
       sectionName: https
   hostnames:
