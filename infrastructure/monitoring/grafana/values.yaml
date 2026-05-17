@@ -83,6 +83,12 @@ podLogs:
     - argocd
     - longhorn-system
     - twingate
+  extraLogProcessingStages: |
+    stage.match {
+      selector = "{namespace=\"temporal\"} |= \"/healthz\" |= \"kube-probe\""
+      action = "drop"
+      drop_counter_reason = "temporal_healthz_probe_noise"
+    }
   
 applicationObservability:
   enabled: true
