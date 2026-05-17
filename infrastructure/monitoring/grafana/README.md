@@ -26,6 +26,6 @@ Infisical source keys:
 
 After those Infisical keys and the External Secrets bootstrap are in place, let Argo CD reconcile normally or refresh the `infrastructure-components` ApplicationSet.
 
-No extra pod log processing stages are currently defined in repo. Pod log collection excludes the `argocd`, `longhorn-system`, and `twingate` namespaces entirely because this repo does not currently need those logs in Grafana Loki.
+No extra pod log processing stages are currently defined in repo, with one exception: Kubernetes health-probe noise from the `temporal` namespace is dropped before Loki ingestion. Temporal's HTTP access logger (Echo framework) records every `/healthz` probe from `kube-probe` at error level even though the request succeeds (HTTP 200, empty error field). A `stage.match` drop rule in `podLogs.extraLogProcessingStages` suppresses those lines; all other Temporal logs remain visible.
 
 Cluster metrics and cluster events intentionally exclude the `argocd`, `longhorn-system`, and `twingate` namespaces, and Kepler stays disabled to avoid spending Grafana Cloud active-series budget on energy telemetry.
