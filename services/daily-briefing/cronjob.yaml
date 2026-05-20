@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-briefing
+  namespace: daily-briefing
+spec:
+  schedule: "0 7,12,18 * * *"
+  timeZone: "America/Detroit"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: daily-briefing
+              image: ghcr.io/matthewshan/daily-briefing:latest
+              imagePullPolicy: Always
+              envFrom:
+                - secretRef:
+                    name: briefing-secrets
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+          restartPolicy: OnFailure
