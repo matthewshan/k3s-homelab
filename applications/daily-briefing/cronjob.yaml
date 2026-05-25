@@ -13,7 +13,7 @@ spec:
         spec:
           containers:
             - name: daily-briefing
-              image: ghcr.io/matthewshan/daily-briefing:sha-a078b55
+              image: ghcr.io/matthewshan/daily-briefing:sha-4bb96bd
               imagePullPolicy: Always
               envFrom:
                 - secretRef:
