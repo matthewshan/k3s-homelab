@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: adk-agent
-          image: ghcr.io/matthewshan/daily-briefing-dev:latest
+          image: ghcr.io/matthewshan/daily-briefing-dev:sha-6d893a1@sha256:29088c4b64af4b73e7965172817fff750c061dad6e112c690bad744bc593cd9a
           imagePullPolicy: Always
           ports:
             - name: http
