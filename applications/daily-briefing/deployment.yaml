@@ -20,7 +20,7 @@ spec:
       containers:
         - name: daily-briefing
           image: ghcr.io/matthewshan/daily-briefing-bot:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
                 name: briefing-secrets
