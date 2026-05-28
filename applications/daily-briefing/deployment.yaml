@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: daily-briefing
-          image: ghcr.io/matthewshan/daily-briefing-bot:latest
+          image: ghcr.io/matthewshan/daily-briefing-bot:sha-6d893a1@sha256:99fdbb37df0121a5199fd6479279544c8d9b84eb7084ae84f16ebbc1f3f1c41e
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
