@@ -4,6 +4,9 @@
     'config:recommended',
   ],
   prHourlyLimit: 3,
+  // Pin digests globally so ArgoCD detects manifest changes on image updates
+  // instead of relying on imagePullPolicy: Always + manual pod deletions
+  pinDigests: true,
   enabledManagers: [
     'helm-values',
     'kubernetes',
@@ -12,20 +15,23 @@
   ],
   argocd: {
     managerFilePatterns: [
-      '/^infra/.+\\.yaml$/',
-      '/^apps/.+\\.yaml$/',
+      '/^infrastructure/.+\\.yaml$/',
+      '/^applications/.+\\.yaml$/',
+      '/^services/.+\\.yaml$/',
     ],
   },
   kubernetes: {
     managerFilePatterns: [
-      '/^infra/.+\\.yaml$/',
-      '/^apps/.+\\.yaml$/',
+      '/^infrastructure/.+\\.yaml$/',
+      '/^applications/.+\\.yaml$/',
+      '/^services/.+\\.yaml$/',
     ],
   },
   'helm-values': {
     managerFilePatterns: [
-      '/^infra/.+/values\\.yaml$/',
-      '/^apps/.+/values\\.yaml$/',
+      '/^infrastructure/.+/values\\.yaml$/',
+      '/^applications/.+/values\\.yaml$/',
+      '/^services/.+/values\\.yaml$/',
     ],
   },
   kustomize: {
@@ -35,9 +41,18 @@
   },
   packageRules: [
     {
+      // Auto-merge digest bumps for first-party images — these track :latest
+      // and each digest change represents a new image push from CI
+      matchPackagePatterns: ['^ghcr\\.io/matthewshan/'],
+      matchUpdateTypes: ['digest'],
+      automerge: true,
+      automergeType: 'branch',
+    },
+    {
       matchUpdateTypes: [
         'minor',
         'patch',
+        'digest',
       ],
       matchManagers: [
         'helm-values',
