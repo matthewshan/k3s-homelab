@@ -5,3 +5,6 @@ infrastructure/controllers/argocd/charts/*
 dockerconfig.json
 
 secrets.md
+
+# Local tooling caches
+.cache/

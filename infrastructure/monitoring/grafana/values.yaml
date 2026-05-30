@@ -89,7 +89,55 @@ podLogs:
       action = "drop"
       drop_counter_reason = "temporal_healthz_probe_noise"
     }
-  
+
+    stage.match {
+      selector = "{namespace=\"temporal\"} |~ \"(Started|Stopped) physicalTaskQueueManager\""
+      action = "drop"
+      drop_counter_reason = "temporal_matching_taskqueue_churn"
+    }
+
+    stage.match {
+      selector = "{namespace=\"kube-system\", container=\"cilium-agent\"} |~ \"level=info\" |~ \"(regenerating all endpoints|Auto-detected local ports|Releasing key|Removed endpoint|Delete endpoint by containerID)\""
+      action = "drop"
+      drop_counter_reason = "cilium_agent_endpoint_churn"
+    }
+
+    stage.match {
+      selector = "{namespace=\"kube-system\", container=\"cilium-operator\"} |~ \"v1 Endpoints is deprecated\""
+      action = "drop"
+      drop_counter_reason = "cilium_operator_endpoints_deprecation"
+    }
+
+    stage.match {
+      selector = "{namespace=\"monitoring\"} |~ \"helm.controller\" |~ \"Reconciled release\""
+      action = "drop"
+      drop_counter_reason = "alloy_helm_reconcile_noise"
+    }
+
+    stage.match {
+      selector = "{namespace=\"monitoring\"} |~ \"(tail routine (started|exited)|stopped tailing file)\""
+      action = "drop"
+      drop_counter_reason = "alloy_tail_routine_noise"
+    }
+
+    stage.match {
+      selector = "{namespace=\"monitoring\"} |~ \"rejoining peers\" |~ \"service=cluster\""
+      action = "drop"
+      drop_counter_reason = "alloy_cluster_gossip_noise"
+    }
+
+    stage.match {
+      selector = "{namespace=\"external-secrets\"} |~ \"(injecting ca certificate|updating webhook config)\""
+      action = "drop"
+      drop_counter_reason = "external_secrets_webhook_cert_noise"
+    }
+
+    stage.match {
+      selector = "{job=~\".+\"} |~ \"\\\"kube-probe/[0-9.]+\\\"\""
+      action = "drop"
+      drop_counter_reason = "kube_probe_http_access_log_noise"
+    }
+
 applicationObservability:
   enabled: true
   receivers:
