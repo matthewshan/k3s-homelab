@@ -19,8 +19,13 @@ spec:
     spec:
       containers:
         - name: daily-briefing
-          image: ghcr.io/matthewshan/daily-briefing-bot:latest@sha256:b1af08d1586ea751401fda6594e1fdf6f5ae3562e79b635e554f3faaa26e5428
+          image: ghcr.io/matthewshan/daily-briefing-bot:latest@sha256:f067ebc4343928d8ec506b96e677f5a5c9ca2bd46b2bacb5d19b855f5fca4d08
           imagePullPolicy: IfNotPresent
+          env:
+            - name: BACKEND
+              value: github
+            - name: GITHUB_MODEL
+              value: gpt-4.1
           envFrom:
             - secretRef:
                 name: briefing-secrets
