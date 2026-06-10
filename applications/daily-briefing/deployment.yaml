@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: daily-briefing
-          image: ghcr.io/matthewshan/daily-briefing-bot:sha-ed4c504
+          image: ghcr.io/matthewshan/daily-briefing-bot:sha-adb8ef9
           imagePullPolicy: IfNotPresent
           env:
             - name: BACKEND
