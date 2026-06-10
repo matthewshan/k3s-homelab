@@ -60,7 +60,7 @@ The validation harness lives at the repo root:
 task validate:monitoring
 ```
 
-This renders the `k8s-monitoring` chart against `values.yaml`, extracts the generated `alloy-logs` ConfigMap, and runs `alloy fmt` on it. The task fails non-zero on any River syntax error, unknown component, or unknown argument. It is the same check run by `.github/workflows/validate-monitoring.yml` on every PR that touches this directory.
+This renders the `k8s-monitoring` chart against `values.yaml`, extracts the generated `alloy-logs` ConfigMap, runs `alloy fmt` on it, and asserts every `drop_counter_reason` slug appears exactly once. The task fails non-zero on any River syntax error, unknown component, unknown argument, or a duplicated `drop_counter_reason` (a copy-paste left over from adding a rule). It is the same check run by `.github/workflows/validate-monitoring.yml` on every PR that touches this directory.
 
 Tooling is fully containerised (`alpine/helm`, `mikefarah/yq`, `grafana/alloy`) so only `task` and `docker` are required locally; image versions are pinned in `Taskfile.yml`.
 

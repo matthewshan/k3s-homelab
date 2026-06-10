@@ -49,11 +49,19 @@ tasks:
 
         echo "==> Extracting alloy-logs ConfigMap..."
         CONFIG=$(docker run --rm -i {{.YQ_IMAGE}} \
-          'select(.kind=="ConfigMap" and (.metadata.name | test("alloy-logs"))) | .data."config.alloy"' \
+          'select(.kind=="ConfigMap" and (.metadata.name | test("alloy-logs$"))) | .data."config.alloy"' \
           < "$RENDERED")
 
         if [ -z "$CONFIG" ] || [ "$CONFIG" = "null" ]; then
           echo "ERROR: no alloy-logs ConfigMap with config.alloy key found in rendered chart" >&2
+          exit 1
+        fi
+
+        echo "==> Checking drop_counter_reason slugs are unique..."
+        DUPES=$(printf '%s\n' "$CONFIG" | grep -oE 'drop_counter_reason = "[^"]+"' | sort | uniq -d)
+        if [ -n "$DUPES" ]; then
+          echo "ERROR: duplicate drop_counter_reason slug(s) in rendered Alloy config:" >&2
+          printf '%s\n' "$DUPES" >&2
           exit 1
         fi
 
