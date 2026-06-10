@@ -1,0 +1,31 @@
+name: validate-monitoring
+
+on:
+  pull_request:
+    paths:
+      - 'infrastructure/monitoring/grafana/**'
+      - 'Taskfile.yml'
+      - '.github/workflows/validate-monitoring.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'infrastructure/monitoring/grafana/**'
+      - 'Taskfile.yml'
+      - '.github/workflows/validate-monitoring.yml'
+
+jobs:
+  validate:
+    name: Render chart and validate Alloy log pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate Alloy log pipeline syntax
+        run: task validate:monitoring

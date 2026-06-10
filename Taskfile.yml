@@ -1,0 +1,93 @@
+version: '3'
+
+vars:
+  HELM_IMAGE: alpine/helm:3.16.3
+  YQ_IMAGE: mikefarah/yq:4.44.3
+  ALLOY_IMAGE: grafana/alloy:v1.7.5
+  K8S_MONITORING_VERSION: 3.8.1
+  GRAFANA_VALUES: infrastructure/monitoring/grafana/values.yaml
+  HELM_CACHE: '{{.TASKFILE_DIR}}/.cache/helm'
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  validate:monitoring:
+    desc: Render the k8s-monitoring chart and validate the embedded Alloy log pipeline
+    deps: [_helm-cache-dir]
+    cmds:
+      - task: validate:monitoring:alloy-logs
+
+  validate:monitoring:alloy-logs:
+    desc: Validate Alloy River syntax inside the rendered alloy-logs ConfigMap
+    deps: [_helm-cache-dir]
+    preconditions:
+      - sh: command -v docker >/dev/null
+        msg: docker is required (https://docs.docker.com/get-docker/)
+      - sh: test -f {{.GRAFANA_VALUES}}
+        msg: '{{.GRAFANA_VALUES}} not found - run from repo root'
+    cmds:
+      - |
+        set -euo pipefail
+        RENDERED=$(mktemp)
+        trap 'rm -f "$RENDERED"' EXIT
+
+        echo "==> Rendering k8s-monitoring {{.K8S_MONITORING_VERSION}}..."
+        docker run --rm \
+          -v "{{.TASKFILE_DIR}}:/workspace:ro" \
+          -v "{{.HELM_CACHE}}:/root/.cache/helm" \
+          -w /workspace \
+          {{.HELM_IMAGE}} \
+          template grafana-k8s-monitoring k8s-monitoring \
+            --repo https://grafana.github.io/helm-charts \
+            --version {{.K8S_MONITORING_VERSION}} \
+            --namespace monitoring \
+            -f {{.GRAFANA_VALUES}} > "$RENDERED"
+
+        echo "==> Extracting alloy-logs ConfigMap..."
+        CONFIG=$(docker run --rm -i {{.YQ_IMAGE}} \
+          'select(.kind=="ConfigMap" and (.metadata.name | test("alloy-logs$"))) | .data."config.alloy"' \
+          < "$RENDERED")
+
+        if [ -z "$CONFIG" ] || [ "$CONFIG" = "null" ]; then
+          echo "ERROR: no alloy-logs ConfigMap with config.alloy key found in rendered chart" >&2
+          exit 1
+        fi
+
+        echo "==> Checking drop_counter_reason slugs are unique..."
+        DUPES=$(printf '%s\n' "$CONFIG" | grep -oE 'drop_counter_reason = "[^"]+"' | sort | uniq -d)
+        if [ -n "$DUPES" ]; then
+          echo "ERROR: duplicate drop_counter_reason slug(s) in rendered Alloy config:" >&2
+          printf '%s\n' "$DUPES" >&2
+          exit 1
+        fi
+
+        echo "==> Validating Alloy River syntax with alloy fmt..."
+        printf '%s' "$CONFIG" | docker run --rm -i {{.ALLOY_IMAGE}} fmt - > /dev/null
+        echo "==> alloy-logs config is valid"
+
+  validate:monitoring:render:
+    desc: Render the k8s-monitoring chart to stdout (useful for grepping the generated Alloy pipeline)
+    deps: [_helm-cache-dir]
+    cmds:
+      - |
+        docker run --rm \
+          -v "{{.TASKFILE_DIR}}:/workspace:ro" \
+          -v "{{.HELM_CACHE}}:/root/.cache/helm" \
+          -w /workspace \
+          {{.HELM_IMAGE}} \
+          template grafana-k8s-monitoring k8s-monitoring \
+            --repo https://grafana.github.io/helm-charts \
+            --version {{.K8S_MONITORING_VERSION}} \
+            --namespace monitoring \
+            -f {{.GRAFANA_VALUES}}
+
+  _helm-cache-dir:
+    internal: true
+    cmds:
+      - mkdir -p {{.HELM_CACHE}}
+    status:
+      - test -d {{.HELM_CACHE}}
