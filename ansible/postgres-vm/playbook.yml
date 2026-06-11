@@ -1,0 +1,110 @@
+# Provision the LAN PostgreSQL VM that backs herd-scheduler (and any future
+# app whose data should outlive cluster rebuilds). Debian/Ubuntu target.
+#
+#   ansible-galaxy collection install -r requirements.yml
+#   ansible-playbook -i inventory.ini playbook.yml -e db_password='...'
+#
+# Idempotent — rerun freely. See README.md for the full setup steps.
+---
+- name: Provision LAN PostgreSQL VM
+  hosts: postgres_vm
+  become: true
+
+  vars:
+    postgres_version: "16"
+    db_name: scheduler
+    db_user: herd
+    # db_password has no default on purpose — pass it with -e or Ansible Vault.
+    lan_cidr: 192.168.1.0/24
+    # Postgres binds all interfaces; access is controlled by pg_hba (LAN CIDR
+    # only) and optionally UFW. Narrow this to the VM's LAN IP if preferred.
+    listen_addresses: "*"
+    manage_ufw: false
+
+  pre_tasks:
+    - name: Require a database password
+      ansible.builtin.assert:
+        that:
+          - db_password is defined
+          - db_password | length >= 16
+        fail_msg: >-
+          Set db_password (16+ chars):
+          -e db_password='...' or via Ansible Vault.
+
+  tasks:
+    - name: Install PostgreSQL and module prerequisites
+      ansible.builtin.apt:
+        name:
+          - "postgresql-{{ postgres_version }}"
+          - "postgresql-client-{{ postgres_version }}"
+          - python3-psycopg2
+          - acl # allows become_user: postgres for the unprivileged module runs
+        state: present
+        update_cache: true
+
+    - name: Ensure PostgreSQL is enabled and running
+      ansible.builtin.service:
+        name: postgresql
+        state: started
+        enabled: true
+
+    - name: Listen beyond localhost so the k3s node can connect
+      community.postgresql.postgresql_set:
+        name: listen_addresses
+        value: "{{ listen_addresses }}"
+      become_user: postgres
+      notify: Restart postgresql
+
+    - name: Hash passwords with scram-sha-256
+      community.postgresql.postgresql_set:
+        name: password_encryption
+        value: scram-sha-256
+      become_user: postgres
+      notify: Restart postgresql
+
+    - name: Apply listener/auth settings before creating credentials
+      ansible.builtin.meta: flush_handlers
+
+    - name: Create the application role
+      community.postgresql.postgresql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        state: present
+      become_user: postgres
+
+    - name: Create the application database
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+        state: present
+      become_user: postgres
+
+    - name: Allow the LAN subnet to reach the database (pg_hba)
+      community.postgresql.postgresql_pg_hba:
+        dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+        contype: host
+        users: "{{ db_user }}"
+        databases: "{{ db_name }}"
+        address: "{{ lan_cidr }}"
+        method: scram-sha-256
+        state: present
+      notify: Reload postgresql
+
+    - name: Allow 5432 from the LAN in UFW
+      community.general.ufw:
+        rule: allow
+        port: "5432"
+        proto: tcp
+        from_ip: "{{ lan_cidr }}"
+      when: manage_ufw | bool
+
+  handlers:
+    - name: Restart postgresql
+      ansible.builtin.service:
+        name: postgresql
+        state: restarted
+
+    - name: Reload postgresql
+      ansible.builtin.service:
+        name: postgresql
+        state: reloaded
