@@ -22,8 +22,8 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: ghcr.io/matthewshan/herd-scheduler:latest-migrate
-          imagePullPolicy: Always
+          image: ghcr.io/matthewshan/herd-scheduler:sha-b538f76-migrate
+          imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -39,3 +39,9 @@ spec:
               memory: 512Mi
           securityContext:
             runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault

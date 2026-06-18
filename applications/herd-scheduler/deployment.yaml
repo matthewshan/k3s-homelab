@@ -21,8 +21,8 @@ spec:
     spec:
       containers:
         - name: herd-scheduler
-          image: ghcr.io/matthewshan/herd-scheduler:latest
-          imagePullPolicy: Always
+          image: ghcr.io/matthewshan/herd-scheduler:sha-b538f76
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 3000
@@ -62,3 +62,16 @@ spec:
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            # Next.js needs writable scratch space; everything else is read-only.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
