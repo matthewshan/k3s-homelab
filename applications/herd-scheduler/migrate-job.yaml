@@ -1,0 +1,47 @@
+# One-shot `prisma migrate deploy` against the LAN Postgres, gating the app
+# rollout: sync-wave 0 must complete before the wave-1 Deployment syncs.
+# Force+Replace because Jobs are immutable — every sync replaces the finished
+# Job with a fresh run (idempotent when there are no pending migrations).
+# Same wave-gate pattern as services/temporal/secret-ready-gate.yaml.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: herd-scheduler-migrate
+  namespace: herd-scheduler
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
+spec:
+  backoffLimit: 4
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: herd-scheduler-migrate
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: ghcr.io/matthewshan/herd-scheduler:sha-b538f76-migrate
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: herd-scheduler-secrets
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault

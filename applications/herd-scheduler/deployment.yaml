@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: herd-scheduler
+  namespace: herd-scheduler
+  labels:
+    app.kubernetes.io/name: herd-scheduler
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: herd-scheduler
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: herd-scheduler
+    spec:
+      containers:
+        - name: herd-scheduler
+          image: ghcr.io/matthewshan/herd-scheduler:sha-b538f76
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: herd-scheduler-secrets
+          env:
+            # Public domain via the Cloudflare Tunnel; TLS terminates at the
+            # edge, so the app must trust the forwarded host (Auth.js).
+            - name: AUTH_URL
+              value: https://herd.mattshan.dev
+            - name: AUTH_TRUST_HOST
+              value: "true"
+            - name: ALLOWLIST_ENABLED
+              value: "true"
+            - name: APP_TIMEZONE
+              value: America/New_York
+          readinessProbe:
+            httpGet:
+              path: /signin
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /signin
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            # Next.js needs writable scratch space; everything else is read-only.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
