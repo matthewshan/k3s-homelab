@@ -8,3 +8,6 @@ secrets.md
 
 # Local tooling caches
 .cache/
+
+# Ansible: real inventories stay local (the .example.ini is the template)
+ansible/**/inventory.ini
