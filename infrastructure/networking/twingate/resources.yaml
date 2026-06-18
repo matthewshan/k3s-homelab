@@ -37,3 +37,22 @@ spec:
           end: 6443
     udp:
       policy: RESTRICTED
+---
+apiVersion: twingate.com/v1beta
+kind: TwingateResource
+metadata:
+  name: postgres-vm
+  namespace: twingate
+spec:
+  name: postgres-vm
+  address: 192.168.1.178
+  isBrowserShortcutEnabled: false
+  protocols:
+    allowIcmp: false
+    tcp:
+      policy: RESTRICTED
+      ports:
+        - start: 5432
+          end: 5432
+    udp:
+      policy: RESTRICTED

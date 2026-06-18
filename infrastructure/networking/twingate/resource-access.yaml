@@ -23,3 +23,16 @@ spec:
   resourceRef:
     name: k3s-api
     namespace: twingate
+---
+apiVersion: twingate.com/v1beta
+kind: TwingateResourceAccess
+metadata:
+  name: homelab-users-postgres-vm
+  namespace: twingate
+spec:
+  groupRef:
+    name: homelab-users
+    namespace: twingate
+  resourceRef:
+    name: postgres-vm
+    namespace: twingate

@@ -41,7 +41,7 @@ This folder now manages four kinds of Twingate objects through the operator:
 
 - `TwingateConnector`: one connector for the homelab remote network
 - `TwingateGroup`: one users group for browser and Kubernetes API access
-- `TwingateResource`: one wildcard app resource for `*.mattshan.dev` plus the Kubernetes API
+- `TwingateResource`: a wildcard app resource for `*.mattshan.dev`, the Kubernetes API, and the LAN Postgres VM
 - `TwingateResourceAccess`: bindings from those resources to the repo-managed users group
 
 The repo intentionally keeps user and service-account membership out of Git. After the manifests sync:
@@ -58,6 +58,11 @@ The browser resource targets `*.mattshan.dev`, which covers the existing interna
 - `longhorn.mattshan.dev`
 
 The Kubernetes API resource targets `192.168.1.163` with TCP port `6443`.
+
+The Postgres VM resource targets `192.168.1.178` with TCP port `5432`, routed
+through the existing `homelab-connector` (the VM is on the same LAN). This is
+the database behind [`applications/herd-scheduler`](../../../applications/herd-scheduler/README.md);
+see [`ansible/postgres-vm`](../../../ansible/postgres-vm/README.md).
 
 ## Connector and DNS expectations
 
