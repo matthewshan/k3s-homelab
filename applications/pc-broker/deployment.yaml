@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pc-broker
+  namespace: pc-broker
+  labels:
+    app.kubernetes.io/name: pc-broker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pc-broker
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pc-broker
+    spec:
+      # Wake-on-LAN sends a UDP broadcast to PC_BROADCAST. From the Cilium
+      # overlay that broadcast never reaches the PC's L2 segment, so the pod
+      # must share the node's network namespace and broadcast from the node's
+      # LAN interface. (The node and the PC are on the same 192.168.1.x subnet.)
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: broker
+          image: ghcr.io/matthewshan/pc-broker:latest
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: pc-broker-config
+            - secretRef:
+                name: pc-broker-secrets
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
