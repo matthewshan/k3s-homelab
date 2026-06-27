@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: herd-scheduler
-          image: ghcr.io/matthewshan/herd-scheduler:sha-e6b0de7
+          image: ghcr.io/matthewshan/herd-scheduler:sha-5d1bd5a
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
