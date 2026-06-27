@@ -22,7 +22,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: ghcr.io/matthewshan/herd-scheduler:sha-605146d-migrate
+          image: ghcr.io/matthewshan/herd-scheduler:sha-e6b0de7-migrate
           imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL
