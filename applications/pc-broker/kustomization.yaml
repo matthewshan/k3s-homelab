@@ -5,6 +5,7 @@ namespace: pc-broker
 
 resources:
   - ns.yaml
+  - external-secret.yaml
   - configmap.yaml
   - deployment.yaml
   - service.yaml
