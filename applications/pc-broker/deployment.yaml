@@ -10,8 +10,11 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: pc-broker
+  # hostNetwork binds host port 8000, so a rolling surge pod can't schedule
+  # alongside the old one (port conflict -> FailedScheduling). Recreate the
+  # single replica: stop the old pod, then start the new one.
   strategy:
-    type: RollingUpdate
+    type: Recreate
   template:
     metadata:
       labels:
