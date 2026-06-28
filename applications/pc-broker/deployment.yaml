@@ -10,11 +10,16 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: pc-broker
-  # hostNetwork binds host port 8000, so a rolling surge pod can't schedule
-  # alongside the old one (port conflict -> FailedScheduling). Recreate the
-  # single replica: stop the old pod, then start the new one.
+  # hostNetwork binds host port 8000, so a rolling *surge* pod can't schedule
+  # alongside the old one (port conflict -> FailedScheduling). maxSurge: 0
+  # removes the old pod before creating the new one, avoiding the conflict.
+  # (Recreate would be cleaner but its forbidden-with-rollingUpdate field trips
+  # up ServerSideApply on the already-RollingUpdate live object.)
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   template:
     metadata:
       labels:
