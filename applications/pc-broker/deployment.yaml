@@ -33,7 +33,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: broker
-          image: ghcr.io/matthewshan/pc-broker:0.1.1
+          image: ghcr.io/matthewshan/pc-broker:0.2.0
           ports:
             - name: http
               containerPort: 8000
