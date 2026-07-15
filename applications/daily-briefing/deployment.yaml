@@ -19,13 +19,20 @@ spec:
     spec:
       containers:
         - name: daily-briefing
-          image: ghcr.io/matthewshan/daily-briefing-bot:sha-2bf95e4
+          image: ghcr.io/matthewshan/daily-briefing-bot:sha-62b467e
           imagePullPolicy: IfNotPresent
           env:
+            # Local LLM: gaming-PC Ollama fronted by pc-broker (same cluster).
+            # Requires pc-broker >= 0.3.1 (Ollama-compatible /api/chat alias).
             - name: BACKEND
-              value: github
-            - name: GITHUB_MODEL
-              value: gpt-4.1
+              value: ollama
+            - name: OLLAMA_API_BASE
+              value: http://pc-broker-service.pc-broker.svc.cluster.local:8000
+            - name: OLLAMA_MODEL
+              value: qwen3.5:9b
+            # Wake-before-run: bot POSTs /api/power/on and polls /api/status.
+            - name: PC_BROKER_URL
+              value: http://pc-broker-service.pc-broker.svc.cluster.local:8000
           envFrom:
             - secretRef:
                 name: briefing-secrets
