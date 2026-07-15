@@ -33,7 +33,9 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: broker
-          image: ghcr.io/matthewshan/pc-broker:0.2.0
+          # 0.3.0 adds the Ollama-compatible /api/chat alias that daily-briefing's
+          # BACKEND=ollama (LiteLLM ollama_chat/) depends on.
+          image: ghcr.io/matthewshan/pc-broker:0.3.0
           ports:
             - name: http
               containerPort: 8000
