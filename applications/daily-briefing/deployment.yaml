@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: daily-briefing
-          image: ghcr.io/matthewshan/daily-briefing-bot:sha-62b467e
+          image: ghcr.io/matthewshan/daily-briefing-bot:sha-bd72453
           imagePullPolicy: IfNotPresent
           env:
             # Local LLM: gaming-PC Ollama fronted by pc-broker (same cluster).
@@ -33,6 +33,10 @@ spec:
             # Wake-before-run: bot POSTs /api/power/on and polls /api/status.
             - name: PC_BROKER_URL
               value: http://pc-broker-service.pc-broker.svc.cluster.local:8000
+            # Two full broker wake windows (300s each) — survives one lost
+            # WoL packet + broker timeout + retry (2026-07-16 briefing outage).
+            - name: PC_BROKER_WAKE_TIMEOUT
+              value: "600"
           envFrom:
             - secretRef:
                 name: briefing-secrets
