@@ -11,3 +11,7 @@ data:
   SHUTDOWN_AGENT_URL: "http://192.168.1.77:8001"
   HOST_REACHABILITY_TIMEOUT: "300"
   POLL_INTERVAL: "5"
+  # Idle auto-shutdown is OFF by default in the broker; without this the PC
+  # stays on all day after a briefing wake. Thresholds use the broker defaults
+  # (30 min LLM idle, 20 min user-input idle, 2 strikes, 15 min post-wake grace).
+  IDLE_SHUTDOWN_ENABLED: "true"
