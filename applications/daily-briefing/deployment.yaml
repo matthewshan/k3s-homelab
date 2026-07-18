@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: daily-briefing
-          image: ghcr.io/matthewshan/daily-briefing-bot:sha-bd72453
+          image: ghcr.io/matthewshan/daily-briefing-bot:sha-d5f640d
           imagePullPolicy: IfNotPresent
           env:
             # Local LLM: gaming-PC Ollama fronted by pc-broker (same cluster).
