@@ -77,7 +77,10 @@ egress to a LAN address is SNATed to the node IP by flannel, which is how the
 Postgres VM resource already works without a matching PC/VM-side change. If a
 client can't reach Ollama after this resource syncs, re-run
 `install-ollama.ps1` with a broader `-AllowFrom` (e.g. the LAN CIDR) as a
-fallback.
+fallback — but note that trades Twingate-mediated access for LAN-wide
+exposure of an unauthenticated, destructive API, so prefer narrowing back to
+the specific node/connector IP(s) once identified rather than leaving the
+CIDR in place.
 
 ## Connector and DNS expectations
 
