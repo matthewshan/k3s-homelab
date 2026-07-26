@@ -41,7 +41,7 @@ This folder now manages four kinds of Twingate objects through the operator:
 
 - `TwingateConnector`: one connector for the homelab remote network
 - `TwingateGroup`: one users group for browser and Kubernetes API access
-- `TwingateResource`: a wildcard app resource for `*.mattshan.dev`, the Kubernetes API, and the LAN Postgres VM
+- `TwingateResource`: a wildcard app resource for `*.mattshan.dev`, the Kubernetes API, the LAN Postgres VM, and the gaming PC's Ollama API
 - `TwingateResourceAccess`: bindings from those resources to the repo-managed users group
 
 The repo intentionally keeps user and service-account membership out of Git. After the manifests sync:
@@ -63,6 +63,24 @@ The Postgres VM resource targets `192.168.1.178` with TCP port `5432`, routed
 through the existing `homelab-connector` (the VM is on the same LAN). This is
 the database behind [`applications/herd-scheduler`](../../../applications/herd-scheduler/README.md);
 see [`ansible/postgres-vm`](../../../ansible/postgres-vm/README.md).
+
+The Ollama resource targets `192.168.1.77` (the gaming PC) with TCP port
+`11434`, giving `Homelab Users` a direct path to the Ollama API instead of
+going through the `pc-broker` chat proxy. **Ollama's API has no auth of its
+own** and includes destructive endpoints (`/api/delete`, `/api/pull`), so this
+grants every member of that group full unauthenticated control over the
+model store, not just chat — acceptable here because the same group already
+holds unmediated access to the Kubernetes API and Postgres. The PC's inbound
+firewall rule (`agent/install-ollama.ps1` in `pc-broker`, default
+`-AllowFrom 192.168.1.163`) only needs to admit the k3s node's LAN IP: pod
+egress to a LAN address is SNATed to the node IP by flannel, which is how the
+Postgres VM resource already works without a matching PC/VM-side change. If a
+client can't reach Ollama after this resource syncs, re-run
+`install-ollama.ps1` with a broader `-AllowFrom` (e.g. the LAN CIDR) as a
+fallback — but note that trades Twingate-mediated access for LAN-wide
+exposure of an unauthenticated, destructive API, so prefer narrowing back to
+the specific node/connector IP(s) once identified rather than leaving the
+CIDR in place.
 
 ## Connector and DNS expectations
 
