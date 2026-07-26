@@ -56,3 +56,22 @@ spec:
           end: 5432
     udp:
       policy: RESTRICTED
+---
+apiVersion: twingate.com/v1beta
+kind: TwingateResource
+metadata:
+  name: ollama-pc
+  namespace: twingate
+spec:
+  name: ollama-pc
+  address: 192.168.1.77
+  isBrowserShortcutEnabled: false
+  protocols:
+    allowIcmp: false
+    tcp:
+      policy: RESTRICTED
+      ports:
+        - start: 11434
+          end: 11434
+    udp:
+      policy: RESTRICTED
