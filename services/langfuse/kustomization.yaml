@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: langfuse
+resources:
+  - ns.yaml
+  - external-secret.yaml
+  - secret-ready-gate.yaml
+  - postgres-provision-job.yaml
+  - httproute.yaml
+helmCharts:
+  - name: langfuse
+    repo: https://langfuse.github.io/langfuse-k8s
+    version: "1.5.40"
+    releaseName: langfuse
+    namespace: langfuse
+    valuesFile: values.yaml

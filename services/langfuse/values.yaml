@@ -1,0 +1,106 @@
+global:
+  defaultStorageClass: longhorn
+
+langfuse:
+  nextauth:
+    url: https://langfuse.mattshan.dev
+    secret:
+      secretKeyRef:
+        name: langfuse-secrets
+        key: nextauth-secret
+  salt:
+    secretKeyRef:
+      name: langfuse-secrets
+      key: salt
+  encryptionKey:
+    secretKeyRef:
+      name: langfuse-secrets
+      key: encryption-key
+  # Repo-managed HTTPRoute on gateway-internal instead of a chart Ingress.
+  ingress:
+    enabled: false
+  web:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+  worker:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+
+# Reuse the shared instance — Langfuse stores only metadata here
+# (traces go to ClickHouse, raw events to S3/MinIO).
+postgresql:
+  deploy: false
+  host: postgresql.postgresql.svc.cluster.local
+  port: 5432
+  auth:
+    username: langfuse
+    # Chart default is `postgres_langfuse`; postgres-provision-job.yaml creates this name.
+    database: langfuse
+    existingSecret: langfuse-secrets
+    secretKeys:
+      userPasswordKey: postgres-password
+      adminPasswordKey: postgres-password
+
+# Single-node, non-HA. clusterEnabled MUST be false when replicaCount is 1.
+# Bitnami subcharts ignore `resources` unless `resourcesPreset: none`.
+clickhouse:
+  deploy: true
+  clusterEnabled: false
+  shards: 1
+  replicaCount: 1
+  resourcesPreset: none
+  auth:
+    existingSecret: langfuse-secrets
+    existingSecretKey: clickhouse-password
+  zookeeper:
+    enabled: false
+  keeper:
+    enabled: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 768Mi
+    limits:
+      memory: 1536Mi
+  persistence:
+    size: 8Gi
+
+redis: # alias for the Bitnami valkey subchart
+  deploy: true
+  auth:
+    existingSecret: langfuse-secrets
+    existingSecretPasswordKey: redis-password
+  primary:
+    resourcesPreset: none
+    resources:
+      requests:
+        cpu: 25m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+    persistence:
+      size: 2Gi
+
+s3: # alias for the Bitnami minio subchart
+  deploy: true
+  auth:
+    existingSecret: langfuse-secrets
+    rootUserSecretKey: minio-root-user
+    rootPasswordSecretKey: minio-root-password
+  resourcesPreset: none
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  persistence:
+    size: 8Gi
