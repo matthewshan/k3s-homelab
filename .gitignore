@@ -2,6 +2,8 @@
 **/.DS_Store
 .DS_Store
 infrastructure/controllers/argocd/charts/*
+# Local `kustomize build --enable-helm` chart cache — Argo CD pulls charts itself
+services/*/charts/
 dockerconfig.json
 
 secrets.md
