@@ -9,15 +9,5 @@ data:
     mattshan.dev:53 {
         errors
         cache 30
-        # In-cluster overrides for hostnames AdGuard does not answer yet. The
-        # Twingate connector resolves through CoreDNS, so an entry here makes a
-        # service reachable remotely without editing AdGuard (which is only
-        # reachable from the LAN). `fallthrough` sends every other name on to
-        # the forward below. LAN clients query AdGuard directly and are NOT
-        # covered — add the rewrite there too, then drop the entry from here.
-        hosts {
-            192.168.1.194 langfuse.mattshan.dev
-            fallthrough
-        }
         forward . 192.168.1.107
     }

@@ -11,12 +11,6 @@ pc.mattshan.dev 192.168.1.194
 temporal.mattshan.dev 192.168.1.194
 langfuse.mattshan.dev 192.168.1.194
 
-> `langfuse.mattshan.dev` is currently answered by a CoreDNS `hosts` override in
-> `infrastructure/networking/coredns/forward-configmap.yaml`, **not** by AdGuard. That
-> covers in-cluster resolvers — including the Twingate connector, so remote access works —
-> but **not LAN clients**, which query AdGuard directly. Add the AdGuard rewrite when
-> convenient, then remove the override.
-
 ## Adding a new service hostname
 
 These rewrites are configured by hand in AdGuard Home (**Filters → DNS rewrites**); they
