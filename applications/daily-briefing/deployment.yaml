@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: daily-briefing
-          image: ghcr.io/matthewshan/daily-briefing-bot:sha-d5f640d
+          image: ghcr.io/matthewshan/daily-briefing-bot:sha-4411706
           imagePullPolicy: IfNotPresent
           env:
             # Local LLM: gaming-PC Ollama fronted by pc-broker (same cluster).
@@ -37,6 +37,12 @@ spec:
             # WoL packet + broker timeout + retry (2026-07-16 briefing outage).
             - name: PC_BROKER_WAKE_TIMEOUT
               value: "600"
+            # Langfuse tracing. In-cluster Service — avoids egressing through the
+            # gateway. The API keys come from briefing-secrets via envFrom.
+            - name: LANGFUSE_BASE_URL
+              value: http://langfuse-web.langfuse.svc.cluster.local:3000
+            - name: OTEL_SERVICE_NAME
+              value: daily-briefing
           envFrom:
             - secretRef:
                 name: briefing-secrets
