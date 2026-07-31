@@ -14,3 +14,25 @@ helmCharts:
     releaseName: langfuse
     namespace: langfuse
     valuesFile: values.yaml
+
+# langfuse-web runs Postgres + ClickHouse migrations before it serves anything,
+# which outlasts the chart's liveness probe (20s delay + 3x10s = ~50s) on this
+# node — kubelet SIGTERMs it mid-migration and it crashloops. The chart exposes
+# no startupProbe key, so patch one in: liveness and readiness stay suspended
+# until it passes, then resume at their normal tight intervals.
+patches:
+  - target:
+      kind: Deployment
+      name: langfuse-web
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/startupProbe
+        value:
+          httpGet:
+            path: /api/public/health
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 60
+          successThreshold: 1
