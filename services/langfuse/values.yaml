@@ -20,12 +20,21 @@ langfuse:
   ingress:
     enabled: false
   web:
+    # Node sizes its default heap off the container limit — at 1Gi that lands
+    # near 512MB, which the startup background migrations blow through
+    # ("Ineffective mark-compacts near heap limit"). Give it an explicit 1Gi
+    # heap under a 1.5Gi limit, leaving headroom for non-heap/native memory.
+    # Kept deliberately modest: the node runs at ~6.2Gi of 7.76Gi.
+    pod:
+      additionalEnv:
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=1024"
     resources:
       requests:
         cpu: 100m
         memory: 512Mi
       limits:
-        memory: 1Gi
+        memory: 1536Mi
   worker:
     resources:
       requests:

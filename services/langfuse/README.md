@@ -24,14 +24,26 @@ never schedule on this node.
 
 | Workload | Kind | CPU req | Mem req | Volume |
 |---|---|---|---|---|
-| `langfuse-web` | Deployment | 100m | 512Mi | — |
+| `langfuse-web` | Deployment | 100m | 512Mi (1536Mi limit) | — |
 | `langfuse-worker` | Deployment | 100m | 512Mi | — |
 | `langfuse-clickhouse-shard0` | StatefulSet | 100m | 768Mi | 8Gi longhorn |
 | `langfuse-s3` | Deployment | 50m | 256Mi | 8Gi longhorn |
 | `langfuse-redis-primary` | StatefulSet | 25m | 128Mi | 2Gi longhorn |
 | **Total** | **5 pods** | **375m** | **2176Mi** | |
 
-Two gotchas encoded in `values.yaml`:
+`langfuse-web` carries a 1536Mi limit rather than the 1Gi the other components get,
+plus `NODE_OPTIONS=--max-old-space-size=1024`. Node sizes its default heap from the
+container limit, and at 1Gi that lands near 512MB — which the startup background
+migrations exhaust outright (`Ineffective mark-compacts near heap limit`). Requests stay
+at 512Mi because the spike is a startup transient, not steady state.
+
+> **Node capacity.** With Langfuse running, the node sits at roughly 6.2Gi working set of
+> 7.76Gi. There is little room left — check actual usage (not just requests) before adding
+> another service or raising these limits. `kubectl top` is unavailable here since k3s runs
+> with `--disable=metrics-server`; use
+> `kubectl get --raw "/api/v1/nodes/k3s/proxy/stats/summary"` instead.
+
+Three gotchas encoded in `values.yaml`:
 
 - Bitnami subcharts ignore an explicit `resources:` block unless `resourcesPreset: none`
   is also set.
