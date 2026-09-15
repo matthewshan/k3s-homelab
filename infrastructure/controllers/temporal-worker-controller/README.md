@@ -59,6 +59,36 @@ the ApplicationSet already generates an app with that name from this directory.
   metrics endpoint is ever exposed beyond the cluster.
 - `rbac.restrictWatchNamespaces` is left unset, so the controller watches all namespaces with
   cluster-wide RBAC. Set it to a list once the namespaces holding `WorkerDeployment`s are known.
+- `resources.requests.cpu: 100m` — **deliberately 10x the chart default.** See below.
+
+## The 10m CPU request crash loop
+
+Between the 2026-09-15 install and the same day's fix, the manager restarted 52 times in 14 hours,
+roughly once every 16 minutes, while doing nothing at all — no `WorkerDeployment` existed yet.
+Symptoms came in two shapes that look unrelated but share one cause:
+
+```
+Error retrieving lease lock ... context deadline exceeded
+Failed to renew lease
+setup: problem running manager  error="leader election lost"     # exit 1
+Liveness probe failed: .../healthz: context deadline exceeded
+```
+
+The chart's default `requests.cpu: 10m` buys a negligible CFS share on a node running at 70% CPU
+requests and 655% limit overcommit. Starved, the manager cannot serve its own `/healthz` within the
+chart's `livenessProbe.timeoutSeconds: 1`, and cannot renew its leader-election lease within the
+client's 5s deadline. Either one kills the pod. Exit code 1 rather than 137 is the tell that this
+was never memory.
+
+Two tempting fixes are **not available in chart 0.29.1**: it exposes no manager-level `extraArgs`
+(so `--leader-elect=false` cannot be turned off for the single replica, which does not need it) and
+no probe overrides (so `timeoutSeconds` cannot be loosened). The `extraArgs` key in `values.yaml`
+belongs to the `kubeRBACProxy` sidecar, not the manager — do not be fooled by it. Reaching either
+knob means giving up the native Helm-OCI source for vendored `helm template` output and kustomize
+patches, which costs Renovate coverage. Not worth it while raising the request fixes the cause.
+
+If this recurs after the request bump, check node contention first (`kubectl describe node`) before
+touching the controller.
 
 No secrets: an in-cluster `Connection` to `temporal-frontend.temporal.svc.cluster.local:7233` is
 plaintext, so no mTLS or API-key secret is involved.
