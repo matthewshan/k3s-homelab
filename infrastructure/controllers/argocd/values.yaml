@@ -39,6 +39,40 @@ configs:
       hs.status = "Progressing"
       hs.message = "Waiting for ExternalSecret Ready condition"
       return hs
+    # Argo CD has no built-in health for temporal.io CRDs, so without this a WorkerDeployment
+    # reports Healthy the moment it syncs -- before the rollout has started. Both conditions are
+    # standard, so this never needs to know a controller-specific status field.
+    resource.customizations.health.temporal.io_WorkerDeployment: |
+      hs = {}
+      if obj.status == nil or obj.status.conditions == nil then
+        hs.status = "Progressing"
+        hs.message = "Waiting for WorkerDeployment conditions"
+        return hs
+      end
+      local ready = nil
+      local progressing = nil
+      for _, condition in ipairs(obj.status.conditions) do
+        if condition.type == "Ready" then ready = condition end
+        if condition.type == "Progressing" then progressing = condition end
+      end
+      if ready ~= nil and ready.status == "True" then
+        hs.status = "Healthy"
+        hs.message = ready.message or "Rollout complete"
+        return hs
+      end
+      if progressing ~= nil then
+        if progressing.status == "True" then
+          hs.status = "Progressing"
+          hs.message = progressing.message or "Rollout in progress"
+        else
+          hs.status = "Degraded"
+          hs.message = progressing.message or "Rollout blocked"
+        end
+        return hs
+      end
+      hs.status = "Progressing"
+      hs.message = "Waiting for conditions"
+      return hs
     resource.customizations.ignoreDifferences.apps_StatefulSet: |
       jqPathExpressions:
         - .spec.volumeClaimTemplates[]?.metadata.creationTimestamp

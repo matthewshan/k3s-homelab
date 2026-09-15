@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: temporal-worker-controller-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+spec:
+  project: infrastructure
+  source:
+    repoURL: registry-1.docker.io/temporalio
+    chart: temporal-worker-controller
+    targetRevision: 0.29.1
+    helm:
+      valuesObject:
+        # Single node: the chart's default second replica has nowhere useful to go.
+        replicas: 1
+        metrics:
+          # Drops the kube-rbac-proxy sidecar. Nothing outside the cluster reaches this
+          # endpoint, and the node has under 1Gi of request headroom.
+          disableAuth: true
+        certmanager:
+          # cert-manager is already an infrastructure component; only the Issuer and
+          # Certificate for the always-on WorkerResourceTemplate webhook are needed.
+          install: false
+          enabled: true
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 128Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: temporal-worker-controller
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

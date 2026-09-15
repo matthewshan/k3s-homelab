@@ -1,0 +1,33 @@
+# Name must differ from the ApplicationSet-generated app for this directory
+# (`temporal-worker-controller`), or the two collide in the argocd namespace.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: temporal-worker-controller-crds
+  namespace: argocd
+  annotations:
+    # CRDs before the controller: a manager that starts without its definitions crash-loops.
+    argocd.argoproj.io/sync-wave: "-8"
+spec:
+  project: infrastructure
+  source:
+    # Argo CD's OCI Helm convention omits the oci:// prefix.
+    repoURL: registry-1.docker.io/temporalio
+    chart: temporal-worker-controller-crds
+    targetRevision: 0.29.1
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: temporal-worker-controller
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
