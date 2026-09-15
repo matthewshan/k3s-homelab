@@ -26,10 +26,23 @@ spec:
           enabled: true
         resources:
           requests:
-            cpu: 10m
+            # The chart ships 10m, which crash-looped the manager roughly every
+            # 16 minutes (52 restarts in 14h) on 2026-09-15. A 10m request buys a
+            # negligible CFS share on a node sitting at 70% CPU requests and 655%
+            # limit overcommit, so the manager could answer neither its own
+            # /healthz inside the chart's livenessProbe timeoutSeconds: 1 nor
+            # renew its leader-election lease inside the client's 5s deadline —
+            # two independent kill paths, both starvation. Exit code was 1
+            # ("leader election lost"), never 137, so memory was never the issue
+            # and stays at the chart default.
+            cpu: 100m
             memory: 64Mi
           limits:
-            cpu: 500m
+            # Raised with the request: the informer cache sync at startup (100
+            # WorkerDeployment workers) is the burstiest moment the manager has,
+            # and it is the moment the probes are tightest. Limits do not consume
+            # schedulable capacity — only requests do.
+            cpu: "1"
             memory: 128Mi
   destination:
     server: https://kubernetes.default.svc
