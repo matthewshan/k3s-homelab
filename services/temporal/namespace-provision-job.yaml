@@ -1,0 +1,93 @@
+# Registers the Temporal namespaces workers connect to. Temporal namespaces live in Temporal's
+# own database, not in Kubernetes, so nothing else in this repo recreates them: without this Job a
+# cluster or PostgreSQL rebuild silently loses them. The failure mode is confusing rather than
+# loud — the Web UI opens on `default` and reports "Namespace default is not found", which reads
+# like a broken UI or a login problem instead of missing state.
+#
+# Sync wave 1: the chart's own resources are wave 0, so this runs once the frontend is up.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: temporal-namespace-provision
+  namespace: temporal
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    # Jobs are immutable, so a re-sync must replace rather than patch.
+    argocd.argoproj.io/sync-options: Force=true,Replace=true
+spec:
+  backoffLimit: 4
+  ttlSecondsAfterFinished: 300
+  # A Job that can never finish is what wedged the Langfuse teardown (bug-069): Argo CD will not
+  # run an Application's deletion finalizer while an operation is still Running, and a gate Job
+  # stuck at 0/1 keeps one Running forever. This deadline guarantees the Job reaches a terminal
+  # state instead of hanging.
+  activeDeadlineSeconds: 900
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: provision
+          # Matches the running server version. The CLI needs no Kubernetes API access — it only
+          # speaks gRPC to the frontend — so this Job has no ServiceAccount, Role or RoleBinding.
+          image: temporalio/admin-tools:1.31.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TEMPORAL_ADDRESS
+              value: temporal-frontend.temporal.svc.cluster.local:7233
+            # Space-separated. Adding a namespace is a one-word edit here.
+            - name: NAMESPACES
+              value: "default"
+            - name: RETENTION
+              value: "7d"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              # Wave 1 means the frontend Deployment is Available, which is not the same as the
+              # frontend serving gRPC. Poll rather than assume.
+              attempts=0
+              until temporal operator cluster health >/dev/null 2>&1; do
+                attempts=$((attempts + 1))
+                if [ "$attempts" -ge 60 ]; then
+                  echo "frontend not serving after 60 attempts at $TEMPORAL_ADDRESS" >&2
+                  exit 1
+                fi
+                echo "waiting for temporal frontend ($attempts)..."
+                sleep 5
+              done
+              echo "frontend is serving"
+
+              # `namespace create` has no --if-not-exists and exits 1 on an existing namespace,
+              # so existence is checked first; `describe` exits 0 when present, 1 when not.
+              for ns in $NAMESPACES; do
+                if temporal operator namespace describe --namespace "$ns" >/dev/null 2>&1; then
+                  echo "namespace $ns already exists"
+                  continue
+                fi
+
+                echo "creating namespace $ns (retention $RETENTION)"
+                if ! temporal operator namespace create --namespace "$ns" --retention "$RETENTION"; then
+                  # Tolerate losing a race against another run; fail on anything else.
+                  if temporal operator namespace describe --namespace "$ns" >/dev/null 2>&1; then
+                    echo "namespace $ns created concurrently"
+                  else
+                    echo "failed to create namespace $ns" >&2
+                    exit 1
+                  fi
+                fi
+              done
+
+              echo "all namespaces present: $NAMESPACES"
