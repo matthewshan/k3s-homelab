@@ -1,0 +1,11 @@
+# How the controller reaches the Temporal server. In-cluster and plaintext, so there is no
+# tls / apiKeySecretRef / mutualTLSSecretRef block at all — the frontend has no auth.
+apiVersion: temporal.io/v1alpha1
+kind: Connection
+metadata:
+  name: homelab-temporal
+  annotations:
+    # Before the WorkerDeployment that references it.
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  hostPort: temporal-frontend.temporal.svc.cluster.local:7233
