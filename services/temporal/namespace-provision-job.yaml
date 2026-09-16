@@ -44,8 +44,12 @@ spec:
             - name: RETENTION
               value: "7d"
           resources:
-            requests: { cpu: 10m, memory: 32Mi }
-            limits: { cpu: 200m, memory: 128Mi }
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
           command:
             - sh
             - -c
