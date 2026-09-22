@@ -41,7 +41,7 @@ spec:
         - name: worker
           # Immutable sha tag, never `latest`: the controller derives Build IDs from the image tag,
           # so a mutable tag would make two different builds indistinguishable to it.
-          image: ghcr.io/matthewshan/worker-versioning:sha-215358b
+          image: ghcr.io/matthewshan/worker-versioning:sha-b6df557
           env:
             - name: TEMPORAL_TASK_QUEUE
               value: worker-versioning
