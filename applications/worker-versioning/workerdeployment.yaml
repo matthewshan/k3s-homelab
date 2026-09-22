@@ -1,0 +1,56 @@
+# The Temporal worker-versioning test harness — the cluster's first WorkerDeployment.
+#
+# Its purpose is to exercise version ramping, not to do useful work: it runs two probe workflows,
+# one PINNED and one AUTO_UPGRADE, which record which worker version served each tick. Source and
+# the `pnpm verify` proof live in `agent-harness-poc/worker-versioning/`.
+#
+# The controller creates one Deployment per live version from this single resource, ramps new
+# workflows onto the target version on the schedule below, and retires an old version only after
+# the workflows pinned to it drain.
+apiVersion: temporal.io/v1alpha1
+kind: WorkerDeployment
+metadata:
+  name: worker-versioning
+spec:
+  replicas: 1
+  workerOptions:
+    connectionRef:
+      name: homelab-temporal
+    # Registered declaratively by services/temporal/namespace-provision-job.yaml. A worker pointed
+    # at a namespace that does not exist cannot connect.
+    temporalNamespace: default
+  rollout:
+    strategy: Progressive
+    steps:
+      - rampPercentage: 10
+        pauseDuration: 5m
+      - rampPercentage: 50
+        pauseDuration: 10m
+  sunset:
+    # Defaults are 1h / 24h. Shortened because this is a single node and each live version is its
+    # own Deployment. scaledownDelay must still outlast anything PINNED to the old version, or
+    # those executions are stranded when its pods go away.
+    scaledownDelay: 15m
+    deleteDelay: 2h
+  template:
+    spec:
+      # The package is private because agent-harness-poc is private; see external-secret.yaml.
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: worker
+          # Immutable sha tag, never `latest`: the controller derives Build IDs from the image tag,
+          # so a mutable tag would make two different builds indistinguishable to it.
+          image: ghcr.io/matthewshan/worker-versioning:sha-215358b
+          env:
+            - name: TEMPORAL_TASK_QUEUE
+              value: worker-versioning
+            # TEMPORAL_ADDRESS / _NAMESPACE / _DEPLOYMENT_NAME / _WORKER_BUILD_ID are injected by
+            # the controller. Setting them here breaks versioning.
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
