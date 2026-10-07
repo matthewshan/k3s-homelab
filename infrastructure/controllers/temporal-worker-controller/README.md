@@ -10,52 +10,41 @@ releases never scale a draining version back up from 0 replicas, so it can never
 Installs into the `temporal-worker-controller` namespace. Upstream docs use `temporal-system`; this
 repo's convention is directory name == namespace, so it is named after the component instead.
 
-## Why this component does not use `helmCharts:`
+## How it installs
 
-Every other chart here installs through `kustomization.yaml` `helmCharts:` and the
-`kustomize-build-with-helm` CMP. Both charts here are published **OCI-only**
-(`oci://docker.io/temporalio/…`), and this directory was originally built on the belief that
-kustomize could not pull OCI charts. **That was wrong:** kustomize has supported
-`repo: oci://...` since v5.2.0
-([kustomize#5167](https://github.com/kubernetes-sigs/kustomize/pull/5167)), and this cluster's
-Argo CD v3.0.11 bundles kustomize 5.6.0. Rendering both 0.31.0 charts inside the repo-server works,
-with two catches:
+Like every other chart in this repo, both charts render through `kustomization.yaml` `helmCharts:`
+and the `kustomize-build-with-helm` CMP (`kustomize build --enable-helm`), as part of the
+`temporal-worker-controller` Application that the `infrastructure/controllers/*` ApplicationSet
+generates. Both charts are published **OCI-only**; kustomize has pulled `repo: oci://...` since
+v5.2.0 ([kustomize#5167](https://github.com/kubernetes-sigs/kustomize/pull/5167)), and Argo CD
+v3.0.11 bundles 5.6.0.
 
-- The CRDs chart ships no `values.yaml`, so the entry needs a `valuesFile:` pointing at a `{}` file,
-  or kustomize fails with `evalsymlink failure on .../values.yaml`.
-- Every entry needs `namespace: temporal-worker-controller`. Without it, the chart renders into the
-  repo-server's own namespace (`argocd`): the webhook Service reference, the Certificate's DNS
-  names and the cert-manager CA-injection annotation all point there.
+| File | What |
+|---|---|
+| `ns.yaml` | the namespace |
+| `kustomization.yaml` | both `helmCharts:` entries — CRDs chart, then the controller |
+| `values.yaml` | controller chart values (see below) |
+| `empty-values.yaml` | `{}` for the CRDs chart, which ships no `values.yaml` of its own |
 
-Each chart still gets its own Argo CD `Application` with a native Helm source, which Argo CD v3
-handles directly and which Renovate already tracks. Note the OCI convention: `repoURL` omits the
-`oci://` prefix (`registry-1.docker.io/temporalio`). The directory is picked up by the
-`infrastructure/controllers/*` ApplicationSet, so this is an app-of-apps leaf. Collapsing it into
-a single `helmCharts:` Application is a valid alternative if the ordering issue below ever bites.
+Three things in `kustomization.yaml` look optional and are not:
 
-## Layout and ordering
+- **`valuesFile: empty-values.yaml` on the CRDs chart.** Without it kustomize fails right after the
+  pull with `evalsymlink failure on .../temporal-worker-controller-crds/values.yaml`.
+- **`namespace:` on every entry.** Without it Helm renders into the repo-server's own namespace
+  (`argocd`): the webhook Service reference, the Certificate's DNS names and the cert-manager
+  CA-injection annotation all point there, and the webhook breaks.
+- **The `releaseName`s.** `temporal-worker-controller-crds` and `temporal-worker-controller-manager`
+  are the names of the two Argo CD Applications that installed these charts until 2026-10-07 (Argo
+  uses the Application name as the Helm release name). Keeping them kept every object name the
+  same, so this directory adopted the live resources in place instead of installing a second
+  controller next to orphaned ones. Changing a release name now renames every object.
 
-| File | Wave | What |
-|---|---|---|
-| `ns.yaml` | `-9` | the namespace |
-| `crds-app.yaml` | `-8` | CRDs chart — a manager that starts before its definitions crash-loops |
-| `controller-app.yaml` | `-7` | the controller itself |
-
-Sync waves are set per resource rather than through `commonAnnotations`, which would overwrite them
-with a single value and lose the CRDs-before-controller ordering.
-
-**The `-8` → `-7` wave does not actually wait.** Argo CD removed health assessment of
-`argoproj.io/Application` in v1.8, and this cluster's `argocd-cm` does not restore it, so a child
-Application counts as healthy the moment it exists and the next wave starts immediately. On an
-upgrade this is harmless, since the CRDs are already there. On a from-scratch install the manager
-may start before its CRDs and crash-loop until they arrive. The fixes are restoring
-`resource.customizations.health.argoproj.io_Application` (a cluster-wide behaviour change for every
-app-of-apps) or installing both charts from one Application, where Argo's kind ordering puts CRDs
-first.
-
-The child Applications are named `temporal-worker-controller-crds` and
-`temporal-worker-controller-manager`. They **must not** be named `temporal-worker-controller` —
-the ApplicationSet already generates an app with that name from this directory.
+**Ordering needs no sync waves.** Within one Application, Argo applies by kind — Namespace, then
+CustomResourceDefinitions, then everything else — so the CRDs always land before the manager. The
+previous layout put each chart in its own child Application with `-8`/`-7` waves, and those waves
+never actually gated anything: Argo CD removed `argoproj.io/Application` health in v1.8 and this
+cluster's `argocd-cm` does not restore it, so a child Application counted as healthy the moment it
+existed.
 
 ## Dependencies
 
@@ -63,8 +52,8 @@ the ApplicationSet already generates an app with that name from this directory.
   the chart's `certmanager.enabled: true` creates an Issuer and Certificate. cert-manager itself is
   its own infrastructure component; chart 0.30.0 removed the bundled subchart and the
   `certmanager.install` key, and since this repo always had it `false`, no migration was needed.
-  On a from-scratch cluster rebuild the ApplicationSet gives every infrastructure app the same app-level wave, so this may
-  sync before cert-manager; the controller crash-loops until the Certificate exists, then recovers.
+  On a from-scratch cluster rebuild the ApplicationSet gives every infrastructure app the same
+  app-level wave, so this may sync before cert-manager; the controller crash-loops until the Certificate exists, then recovers.
 - **Docker Hub** — charts and the controller image pull from `registry-1.docker.io` anonymously,
   which is rate-limited.
 
@@ -96,12 +85,13 @@ chart's `livenessProbe.timeoutSeconds: 1`, and cannot renew its leader-election 
 client's 5s deadline. Either one kills the pod. Exit code 1 rather than 137 is the tell that this
 was never memory.
 
-Two tempting fixes are **not available in chart 0.29.1**: it exposes no manager-level `extraArgs`
-(so `--leader-elect=false` cannot be turned off for the single replica, which does not need it) and
-no probe overrides (so `timeoutSeconds` cannot be loosened). The `extraArgs` key in `values.yaml`
-belongs to the `kubeRBACProxy` sidecar, not the manager — do not be fooled by it. Reaching either
-knob means giving up the native Helm-OCI source for vendored `helm template` output and kustomize
-patches, which costs Renovate coverage. Not worth it while raising the request fixes the cause.
+Two tempting fixes are **still not exposed as chart values** (checked through 0.31.0): there is no
+manager-level `extraArgs` (so `--leader-elect` cannot be dropped for the single replica, which does
+not need it) and no probe overrides (so `timeoutSeconds` cannot be loosened). The `extraArgs` key in
+`values.yaml` belongs to the `kubeRBACProxy` sidecar, not the manager — do not be fooled by it.
+Now that the charts render through kustomize, either knob is reachable with a `patches:` entry on the
+`temporal-worker-controller-manager-manager` Deployment, with no loss of Renovate coverage. Not
+needed while raising the request fixes the cause.
 
 If this recurs after the request bump, check node contention first (`kubectl describe node`) before
 touching the controller.
@@ -111,10 +101,14 @@ plaintext, so no mTLS or API-key secret is involved.
 
 ## Deleting this component
 
-The Applications carry no `resources-finalizer.argocd.argoproj.io`, so removing them leaves the
-CRDs and controller in the cluster rather than cascading. That is deliberate — deleting the CRDs
-would take every `WorkerDeployment` with it, and with them the workers running pinned workflows.
-Clean up by hand if you really mean it.
+The ApplicationSet-generated `temporal-worker-controller` Application carries
+`resources-finalizer.argocd.argoproj.io`, so deleting this directory cascades to everything it
+manages — **including the CRDs**, and with them every `WorkerDeployment` and the workers running
+pinned workflows. That is the same trade-off every other CRD-shipping component here (Longhorn,
+external-secrets, Cilium, …) already makes, so it is accepted rather than guarded against. If that
+ever needs to change, add `argocd.argoproj.io/sync-options: Delete=false,Prune=false` to the CRDs
+with a kustomize patch, or set `preserveResourcesOnDeletion` on the ApplicationSet for every
+component at once.
 
 ## Verifying
 
@@ -134,8 +128,8 @@ Its consumer is `applications/worker-versioning/`, the versioning test harness.
 
 ## Upgrading
 
-Bump `targetRevision` in both Applications together. The CRDs chart is backwards compatible, so the
-non-gating waves above do not matter here. Before bumping, check the controller's
+Bump `version` on both `helmCharts:` entries together (Renovate's `kustomize` manager tracks them).
+One Application applies both, CRDs first by kind ordering. Before bumping, check the controller's
 `internal/k8s/deployments.go` `ComputeBuildID` for changes: if a release changes how Build IDs are
 derived, the upgrade itself starts a new version rollout on every `WorkerDeployment`. 0.29.1 →
 0.31.0 did not. 1.12.0 reads the template through the new `spec.deployment` field but falls back to
