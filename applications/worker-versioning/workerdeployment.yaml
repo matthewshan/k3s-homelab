@@ -45,6 +45,10 @@ spec:
           env:
             - name: TEMPORAL_TASK_QUEUE
               value: worker-versioning
+            # Config-only rollout test (2026-10-07). Any pod-template change produces a new Build ID
+            # (image tag + template hash), so this alone rolls out a new version with the same image.
+            - name: ROLLOUT_MARKER
+              value: config-only-2026-10-07
             # TEMPORAL_ADDRESS / _NAMESPACE / _DEPLOYMENT_NAME / _WORKER_BUILD_ID are injected by
             # the controller. Setting them here breaks versioning.
           resources:
