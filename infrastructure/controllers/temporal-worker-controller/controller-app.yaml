@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: registry-1.docker.io/temporalio
     chart: temporal-worker-controller
-    targetRevision: 0.29.1
+    targetRevision: 0.31.0
     helm:
       valuesObject:
         # Single node: the chart's default second replica has nowhere useful to go.
@@ -20,9 +20,9 @@ spec:
           # endpoint, and the node has under 1Gi of request headroom.
           disableAuth: true
         certmanager:
-          # cert-manager is already an infrastructure component; only the Issuer and
-          # Certificate for the always-on WorkerResourceTemplate webhook are needed.
-          install: false
+          # cert-manager is its own infrastructure component (chart 0.30.0 dropped the
+          # bundled subchart and its `install` key); this only creates the Issuer and
+          # Certificate for the always-on WorkerResourceTemplate webhook.
           enabled: true
         resources:
           requests:
