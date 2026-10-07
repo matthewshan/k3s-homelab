@@ -1,8 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# No `helmCharts:` block here on purpose — see README.md. The charts are OCI-only and
-# kustomize cannot pull them, so each is installed by its own Argo CD Application.
+# Each OCI chart is installed by its own Argo CD Application rather than `helmCharts:` —
+# see README.md for why, and for why the sync waves below do not actually gate each other.
 # Sync waves are per-resource rather than commonAnnotations, which would overwrite them.
 resources:
   - ns.yaml
