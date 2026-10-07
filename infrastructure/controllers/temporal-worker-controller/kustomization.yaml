@@ -1,10 +1,42 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Each OCI chart is installed by its own Argo CD Application rather than `helmCharts:` —
-# see README.md for why, and for why the sync waves below do not actually gate each other.
-# Sync waves are per-resource rather than commonAnnotations, which would overwrite them.
+# Both charts are OCI-only; kustomize >= 5.2.0 pulls `oci://` repos directly (Argo CD v3.0.11
+# bundles 5.6.0). One Application renders both, so Argo's kind ordering (Namespace -> CRDs -> rest)
+# puts the CRDs before the manager without sync waves. See README.md.
 resources:
   - ns.yaml
-  - crds-app.yaml
-  - controller-app.yaml
+
+helmCharts:
+  - name: temporal-worker-controller-crds
+    repo: oci://docker.io/temporalio
+    version: 0.31.0
+    # Release names match the Argo CD Applications that used to install these charts, so the
+    # rendered object names are unchanged and this directory adopts the live resources in place.
+    releaseName: temporal-worker-controller-crds
+    # Without namespace:, Helm renders into the repo-server's own namespace (argocd).
+    namespace: temporal-worker-controller
+    # The CRDs chart ships no values.yaml; without a valuesFile kustomize fails with
+    # `evalsymlink failure on .../values.yaml`.
+    valuesFile: empty-values.yaml
+  - name: temporal-worker-controller
+    repo: oci://docker.io/temporalio
+    version: 0.31.0
+    releaseName: temporal-worker-controller-manager
+    namespace: temporal-worker-controller
+    valuesFile: values.yaml
+
+# This Application carries resources-finalizer.argocd.argoproj.io and auto-prunes, so without this
+# deleting the directory (or a bad prune) would delete the CRDs and, with them, every
+# WorkerDeployment and the workers running pinned workflows. Delete=false keeps the CRDs when the
+# Application goes away; Prune=false keeps them if they ever drop out of the rendered output.
+patches:
+  - target:
+      kind: CustomResourceDefinition
+    patch: |-
+      apiVersion: apiextensions.k8s.io/v1
+      kind: CustomResourceDefinition
+      metadata:
+        name: ignored
+        annotations:
+          argocd.argoproj.io/sync-options: Delete=false,Prune=false
