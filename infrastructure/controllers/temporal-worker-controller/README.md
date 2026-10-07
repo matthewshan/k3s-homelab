@@ -101,16 +101,14 @@ plaintext, so no mTLS or API-key secret is involved.
 
 ## Deleting this component
 
-The ApplicationSet-generated `temporal-worker-controller` Application **does** carry
-`resources-finalizer.argocd.argoproj.io` and auto-prunes. Left alone, deleting this directory would
-cascade to the CRDs and take every `WorkerDeployment` with them, and with those the workers running
-pinned workflows. So `kustomization.yaml` patches every CRD with
-`argocd.argoproj.io/sync-options: Delete=false,Prune=false`: Argo leaves them in place when the
-Application is deleted, or if they drop out of the rendered output. The controller Deployment, RBAC
-and webhook are not protected and do get removed. Delete the CRDs by hand if you really mean it.
-
-(The previous two-Application layout got the same protection by giving its child Applications no
-finalizer.)
+The ApplicationSet-generated `temporal-worker-controller` Application carries
+`resources-finalizer.argocd.argoproj.io`, so deleting this directory cascades to everything it
+manages — **including the CRDs**, and with them every `WorkerDeployment` and the workers running
+pinned workflows. That is the same trade-off every other CRD-shipping component here (Longhorn,
+external-secrets, Cilium, …) already makes, so it is accepted rather than guarded against. If that
+ever needs to change, add `argocd.argoproj.io/sync-options: Delete=false,Prune=false` to the CRDs
+with a kustomize patch, or set `preserveResourcesOnDeletion` on the ApplicationSet for every
+component at once.
 
 ## Verifying
 
