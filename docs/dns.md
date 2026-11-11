@@ -9,6 +9,7 @@ n8n.mattshan.dev 192.168.1.194
 longhorn.mattshan.dev 192.168.1.194
 pc.mattshan.dev 192.168.1.194
 temporal.mattshan.dev 192.168.1.194
+paseo.mattshan.dev 192.168.1.194
 
 ## Adding a new service hostname
 

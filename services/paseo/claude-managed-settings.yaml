@@ -1,0 +1,21 @@
+# Claude Code managed policy, mounted read-only at /etc/claude-code. It
+# outranks user and project settings, so an agent cannot undo it by editing
+# ~/.claude or a repo's .claude/ on the agent-writable PVC.
+#
+# - disableBypassPermissionsMode: no bypassPermissions ("full-access") sessions;
+#   tool calls keep asking for approval. Remove only deliberately.
+# - allowManagedHooksOnly: ignore hooks from ~/.claude, repos and plugins, so a
+#   prompt-injected agent cannot plant a hook that runs in every later session.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: claude-managed-settings
+  namespace: paseo
+data:
+  managed-settings.json: |
+    {
+      "permissions": {
+        "disableBypassPermissionsMode": "disable"
+      },
+      "allowManagedHooksOnly": true
+    }

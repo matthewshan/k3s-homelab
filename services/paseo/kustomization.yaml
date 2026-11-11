@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: paseo
+
+resources:
+  - ns.yaml
+  - external-secret.yaml
+  - github-app.yaml
+  - serviceaccount.yaml
+  - clusterrolebinding.yaml
+  - pvc.yaml
+  - claude-managed-settings.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - networkpolicy.yaml

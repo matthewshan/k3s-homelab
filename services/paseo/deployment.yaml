@@ -1,0 +1,202 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paseo
+  namespace: paseo
+  labels:
+    app.kubernetes.io/name: paseo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: paseo
+  strategy:
+    type: Recreate  # RWO volume and a single daemon identity (daemon-keypair.json)
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: paseo
+    spec:
+      serviceAccountName: paseo
+      # Projected, short-lived token for read-only kubectl (ClusterRole `view`).
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      # The upstream image ships no agent CLIs. Install pinned, hash-verified
+      # binaries into an emptyDir on every start and mount it read-only into
+      # the daemon. Never install them on the PVC: agents can write there, so a
+      # prompt-injected agent could swap a binary and own every later session.
+      initContainers:
+        - name: install-tools
+          image: alpine:3.22@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f
+          env:
+            # kubectl within one minor of the cluster (k3s v1.35.2).
+            - name: KUBECTL_VERSION
+              value: v1.35.10
+            - name: KUBECTL_SHA256
+              value: c49a28f1f4efc4d475ed05f47f2ce8e563bf7bef69ed77fe1b924ea6d83b6327
+            - name: GH_VERSION
+              value: "2.103.3"
+            # sha256 of gh_<v>_linux_amd64.tar.gz, from the release's checksums.txt.
+            - name: GH_SHA256
+              value: 4c806978ffce1cec70853302a56d70ac6da4f19bae7adca4e1a8ab00633dd91d
+            # The native glibc build straight from the npm registry: the
+            # @anthropic-ai/claude-code wrapper only copies this binary in its
+            # postinstall, so skip npm and its install scripts entirely.
+            - name: CLAUDE_CODE_VERSION
+              value: "2.1.322"
+            # sha256 of claude-code-linux-x64-<v>.tgz (its registry sha512 integrity also matched).
+            - name: CLAUDE_CODE_SHA256
+              value: 3cc175d82980c20ab66057d345bd2d913244f8cf1791d10722a1225214b57219
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              verify() {
+                [ -n "$2" ] || { echo "no pinned sha256 for $1" >&2; exit 1; }
+                got="$(sha256sum "$1" | cut -d' ' -f1)"
+                [ "$got" = "$2" ] || { echo "sha256 mismatch for $1: got $got" >&2; exit 1; }
+              }
+              T=/opt/paseo-tools
+              mkdir -p "$T/bin" "$T/libexec"
+              cd /tmp
+
+              wget -qO kubectl "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl"
+              verify kubectl "$KUBECTL_SHA256"
+              cp kubectl "$T/bin/kubectl" && chmod 0555 "$T/bin/kubectl"
+
+              gh_tgz="gh_${GH_VERSION}_linux_amd64.tar.gz"
+              wget -qO "$gh_tgz" "https://github.com/cli/cli/releases/download/v$GH_VERSION/$gh_tgz"
+              verify "$gh_tgz" "$GH_SHA256"
+              tar -xzf "$gh_tgz" "gh_${GH_VERSION}_linux_amd64/bin/gh"
+              cp "gh_${GH_VERSION}_linux_amd64/bin/gh" "$T/libexec/gh" && chmod 0555 "$T/libexec/gh"
+              # Wrapper: read the current App installation token on every call,
+              # since the mounted file is replaced every 30 minutes.
+              printf '%s\n' '#!/bin/sh' \
+                'export GH_TOKEN="$(cat /var/run/github/token)"' \
+                'exec /opt/paseo-tools/libexec/gh "$@"' > "$T/bin/gh"
+              chmod 0555 "$T/bin/gh"
+
+              cc_tgz="claude-code-linux-x64-$CLAUDE_CODE_VERSION.tgz"
+              wget -qO "$cc_tgz" "https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/$cc_tgz"
+              verify "$cc_tgz" "$CLAUDE_CODE_SHA256"
+              tar -xzf "$cc_tgz" package/claude
+              cp package/claude "$T/bin/claude" && chmod 0555 "$T/bin/claude"
+              rm -rf /tmp/*
+          volumeMounts:
+            - name: tools
+              mountPath: /opt/paseo-tools
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+      containers:
+        - name: paseo
+          # >= 0.5.0 is required: GHSA-2xhx-c69r-qj4j (relay E2EE bypass).
+          image: ghcr.io/getpaseo/paseo:0.15.4@sha256:d9c05730c66a6b64a708303e7cfa6a4009f31f89507bf986fb5b098af25a1c3f
+          imagePullPolicy: IfNotPresent
+          # The upstream entrypoint only warns and then serves an
+          # unauthenticated control API when PASEO_PASSWORD is empty. Fail closed.
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              if [ "${#PASEO_PASSWORD}" -lt 24 ]; then
+                echo "PASEO_PASSWORD is missing or shorter than 24 characters; refusing to start" >&2
+                exit 1
+              fi
+              exec /usr/bin/tini -- /usr/local/bin/paseo-docker-entrypoint
+          ports:
+            - name: http
+              containerPort: 6767
+          env:
+            - name: HOME
+              value: /home/paseo
+            # Read-only tools first; nothing agent-writable on PATH.
+            - name: PATH
+              value: /opt/paseo-tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            - name: PASEO_HOSTNAMES
+              value: paseo.mattshan.dev
+            # The binary is read-only anyway; this just stops update attempts.
+            - name: DISABLE_AUTOUPDATER
+              value: "1"
+            # git reads the current GitHub App installation token from the
+            # mounted file at call time, so it is never written into a git
+            # config file on the PVC and never goes stale.
+            - name: GIT_CONFIG_COUNT
+              value: "3"
+            - name: GIT_CONFIG_KEY_0
+              value: credential.https://github.com.helper
+            - name: GIT_CONFIG_VALUE_0
+              value: '!f() { test "$1" = get && echo username=x-access-token && echo "password=$(cat /var/run/github/token)"; }; f'
+            - name: GIT_CONFIG_KEY_1
+              value: user.name
+            - name: GIT_CONFIG_VALUE_1
+              value: Paseo agent
+            - name: GIT_CONFIG_KEY_2
+              value: user.email
+            - name: GIT_CONFIG_VALUE_2
+              value: paseo@homelab.invalid
+          envFrom:
+            - secretRef:
+                name: paseo-secrets
+          volumeMounts:
+            - name: home
+              mountPath: /home/paseo
+            - name: home
+              mountPath: /workspace
+              subPath: workspace
+            - name: tools
+              mountPath: /opt/paseo-tools
+              readOnly: true
+            # Claude Code managed policy: outranks anything an agent writes to
+            # ~/.claude, and it is read-only here.
+            - name: claude-managed-settings
+              mountPath: /etc/claude-code
+              readOnly: true
+            # No subPath: the kubelet only refreshes whole-volume mounts.
+            - name: github-token
+              mountPath: /var/run/github
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+      volumes:
+        - name: home
+          persistentVolumeClaim:
+            claimName: paseo-home
+        - name: tools
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: claude-managed-settings
+          configMap:
+            name: claude-managed-settings
+        - name: github-token
+          secret:
+            secretName: paseo-github-token
+            defaultMode: 0440  # group 1000 via fsGroup
+      restartPolicy: Always

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: paseo
+  namespace: paseo
+spec:
+  ports:
+    - name: http
+      port: 6767
+      targetPort: 6767
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: paseo

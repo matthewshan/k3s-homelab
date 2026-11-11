@@ -1,0 +1,70 @@
+# GitHub access for agents through a GitHub App instead of a PAT: nothing to
+# rotate, and agents only ever see a one-hour installation token.
+#
+# The App's private key is synced into `paseo-github-app` and used only by the
+# ESO generator. The pod never mounts it, and the agents' `view` ClusterRole
+# cannot read Secrets, so a prompt-injected agent can at worst leak a token
+# that expires within the hour.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: paseo-github-app
+  namespace: paseo
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: infisical
+    kind: ClusterSecretStore
+  target:
+    name: paseo-github-app
+    creationPolicy: Owner
+  data:
+    - secretKey: private-key
+      remoteRef:
+        key: paseo-github-app-private-key
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: GithubAccessToken
+metadata:
+  name: paseo-github
+  namespace: paseo
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  # Not secret: shown on the App's settings page and in the installation URL.
+  appID: "5707698"
+  installID: "180765222"
+  # Cap every minted token at these, even if the App is granted more later.
+  # Repository scope comes from the App installation's repo selection.
+  permissions:
+    contents: write
+    pull_requests: write
+  auth:
+    privateKey:
+      secretRef:
+        name: paseo-github-app
+        key: private-key
+---
+# Installation tokens live for one hour; mint a fresh one every 30 minutes.
+# The pod mounts this Secret as a file (not env), so the kubelet swaps in the
+# new token without a restart.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: paseo-github-token
+  namespace: paseo
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  refreshInterval: 30m
+  target:
+    name: paseo-github-token
+    creationPolicy: Owner
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: GithubAccessToken
+          name: paseo-github
