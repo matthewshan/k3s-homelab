@@ -35,8 +35,10 @@ spec:
         - name: broker
           # 0.3.x adds the Ollama-compatible /api/chat alias that daily-briefing's
           # BACKEND=ollama (LiteLLM ollama_chat/) depends on; 0.3.2 re-sends the
-          # WoL packet while waking so one lost broadcast can't sink a wake.
-          image: ghcr.io/matthewshan/pc-broker:0.3.2
+          # WoL packet while waking so one lost broadcast can't sink a wake; 0.3.3
+          # bounds keep-awake with a TTL so a stray toggle can't disable idle
+          # auto-shutdown and wedge the PC on (pc-broker bug-053).
+          image: ghcr.io/matthewshan/pc-broker:0.3.3
           ports:
             - name: http
               containerPort: 8000
