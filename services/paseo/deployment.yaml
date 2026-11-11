@@ -61,9 +61,15 @@ spec:
                 wget -q "$base/gh_${GH_VERSION}_checksums.txt"
                 grep " $tarball\$" "gh_${GH_VERSION}_checksums.txt" | sha256sum -c -
                 tar -xzf "$tarball"
-                cp "gh_${GH_VERSION}_linux_amd64/bin/gh" "$BIN/gh" && chmod 0755 "$BIN/gh"
+                cp "gh_${GH_VERSION}_linux_amd64/bin/gh" "$BIN/gh-bin" && chmod 0755 "$BIN/gh-bin"
                 echo "$GH_VERSION" > "$BIN/.gh-version"
               fi
+              # `gh` wrapper: read the current App installation token on every
+              # call, since the mounted file is replaced every 30 minutes.
+              printf '%s\n' '#!/bin/sh' \
+                'export GH_TOKEN="$(cat /var/run/github/token)"' \
+                'exec /home/paseo/.local/bin/gh-bin "$@"' > "$BIN/gh"
+              chmod 0755 "$BIN/gh"
           volumeMounts:
             - name: home
               mountPath: /home/paseo
@@ -111,14 +117,15 @@ spec:
             # Keep the pinned Claude Code version; bump it in install-claude-code.
             - name: DISABLE_AUTOUPDATER
               value: "1"
-            # git authenticates to GitHub with GH_TOKEN at call time, so the
-            # token is never written into a git config file on the PVC.
+            # git reads the current GitHub App installation token from the
+            # mounted file at call time, so it is never written into a git
+            # config file on the PVC and never goes stale.
             - name: GIT_CONFIG_COUNT
               value: "3"
             - name: GIT_CONFIG_KEY_0
               value: credential.https://github.com.helper
             - name: GIT_CONFIG_VALUE_0
-              value: '!f() { test "$1" = get && echo username=x-access-token && echo "password=$GH_TOKEN"; }; f'
+              value: '!f() { test "$1" = get && echo username=x-access-token && echo "password=$(cat /var/run/github/token)"; }; f'
             - name: GIT_CONFIG_KEY_1
               value: user.name
             - name: GIT_CONFIG_VALUE_1
@@ -136,6 +143,10 @@ spec:
             - name: home
               mountPath: /workspace
               subPath: workspace
+            # No subPath: the kubelet only refreshes whole-volume mounts.
+            - name: github-token
+              mountPath: /var/run/github
+              readOnly: true
           readinessProbe:
             tcpSocket:
               port: http
@@ -155,4 +166,8 @@ spec:
         - name: home
           persistentVolumeClaim:
             claimName: paseo-home
+        - name: github-token
+          secret:
+            secretName: paseo-github-token
+            defaultMode: 0440  # group 1000 via fsGroup
       restartPolicy: Always

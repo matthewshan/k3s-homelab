@@ -24,16 +24,41 @@ anything an agent can reach, a prompt-injected agent can reach.
 ## Secrets (Infisical)
 
 Create these keys in the `k3s-homelab` project, `lab` environment, before first
-sync. Every agent can read them, so scope each one tightly.
+sync.
 
-| Infisical key | Becomes env | How to create |
+| Infisical key | Ends up as | How to create |
 |---|---|---|
-| `paseo-password` | `PASEO_PASSWORD` | `openssl rand -base64 32`. Guards the API/WebSocket; the static UI stays public. |
-| `paseo-claude-code-oauth-token` | `CLAUDE_CODE_OAUTH_TOKEN` | `claude setup-token` on a machine logged in to the Pro account. Acts as the whole Claude account: rotate if leaked. |
-| `paseo-gh-token` | `GH_TOKEN` | Fine-grained PAT: only the repos agents work on, Contents + Pull requests read/write. **Never include `k3s-homelab` or `cloud-infrastructure`**: a push to their `main` deploys (Argo CD / HCP Terraform). |
+| `paseo-password` | env `PASEO_PASSWORD` | `openssl rand -base64 32`. Guards the API/WebSocket; the static UI stays public. |
+| `paseo-claude-code-oauth-token` | env `CLAUDE_CODE_OAUTH_TOKEN` | `claude setup-token` on a machine logged in to the Pro account. Acts as the whole Claude account: rotate if leaked. |
+| `paseo-github-app-private-key` | Secret `paseo-github-app`, **not** in the pod | The GitHub App's `.pem`, pasted whole. Only the ESO generator reads it. |
 
-Env vars are read at pod start: after rotating a key, wait for the
-ExternalSecret refresh (1h, or annotate it to force) and restart the pod.
+Both env keys are readable by every agent. Env vars are read at pod start:
+after changing one, wait for the ExternalSecret refresh (1h, or annotate it to
+force) and restart the pod.
+
+### GitHub: App `5707698`, installation `180765222`
+
+Agents never hold a long-lived GitHub credential. `github-app.yaml` has ESO's
+`GithubAccessToken` generator mint a one-hour installation token every 30
+minutes into Secret `paseo-github-token`, mounted at `/var/run/github/token`.
+`git` (credential helper in `GIT_CONFIG_*`) and `gh` (a wrapper around
+`gh-bin`) read that file on every call, so refreshes need no restart and there
+is nothing to rotate on a schedule.
+
+- **Repos:** whatever the App installation is granted (GitHub → Settings →
+  Applications → the App → Configure). Changing it needs no secret change.
+  **Never grant `k3s-homelab` or `cloud-infrastructure`**: a push to their
+  `main` deploys (Argo CD / HCP Terraform).
+- **Permissions:** the App has Contents + Pull requests read/write and no
+  Workflows, so agents cannot edit CI. The generator also caps each token at
+  `contents`/`pull_requests: write`, so widening the App later does not widen
+  agent tokens.
+- **Rotate the private key only if it leaks:** generate a new key on the App
+  page, replace `paseo-github-app-private-key` in Infisical, delete the old key
+  on GitHub.
+- **Check minting:** `kubectl -n paseo get externalsecret paseo-github-token`
+  should be `SecretSynced`; if not, `kubectl -n paseo describe` it (wrong IDs
+  or key format show up there).
 
 ## Versions
 
@@ -42,7 +67,7 @@ ExternalSecret refresh (1h, or annotate it to force) and restart the pod.
 | Paseo `0.15.4` (index digest) | `deployment.yaml`, both `paseo` images | Must stay `>= 0.5.0` (GHSA-2xhx-c69r-qj4j, relay E2EE bypass). |
 | Claude Code `2.1.322` | `install-claude-code` env | `DISABLE_AUTOUPDATER=1` keeps it pinned. |
 | kubectl `v1.35.10` + sha256 | `install-cli-tools` env | Stay within one minor of the k3s server. |
-| gh `2.103.3` | `install-cli-tools` env | Verified against the release's `checksums.txt`. |
+| gh `2.103.3` | `install-cli-tools` env | Verified against the release's `checksums.txt`; installed as `gh-bin` behind the token-reading `gh` wrapper. |
 
 The init containers install the CLIs onto the PVC and skip work when the
 recorded version matches, so a bump is an env change plus a pod restart.

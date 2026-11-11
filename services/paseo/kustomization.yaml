@@ -6,6 +6,7 @@ namespace: paseo
 resources:
   - ns.yaml
   - external-secret.yaml
+  - github-app.yaml
   - serviceaccount.yaml
   - clusterrolebinding.yaml
   - pvc.yaml
