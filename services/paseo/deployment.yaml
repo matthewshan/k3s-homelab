@@ -116,6 +116,47 @@ spec:
                 echo "PASEO_PASSWORD is missing or shorter than 24 characters; refusing to start" >&2
                 exit 1
               fi
+              # Give every agent the Linear MCP server: merge it into the
+              # user-scope Claude config from LINEAR_API_KEY (Secret
+              # paseo-linear), or remove it when the key is empty. Best effort:
+              # any failure only warns, the daemon still starts. Never print the
+              # key: a JSON parse error message can quote the file, so it is not
+              # passed through.
+              CLAUDE_JSON="${CLAUDE_CONFIG_DIR:-$HOME}/.claude.json" node -e '
+                process.on("uncaughtException", (e) => { console.error("Linear MCP: " + e.message); process.exit(1); });
+                const fs = require("fs"), path = require("path");
+                const file = process.env.CLAUDE_JSON;
+                const key = (process.env.LINEAR_API_KEY || "").trim();
+                let text = null, cfg = {};
+                try { text = fs.readFileSync(file, "utf8"); }
+                catch (e) { if (e.code !== "ENOENT") throw new Error("cannot read " + file + " (" + e.code + ")"); }
+                if (text !== null) {
+                  try { cfg = JSON.parse(text); } catch { throw new Error(file + " is not valid JSON; left unchanged"); }
+                }
+                const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+                if (!isObj(cfg)) throw new Error(file + " is not a JSON object; left unchanged");
+                if (cfg.mcpServers !== undefined && !isObj(cfg.mcpServers)) throw new Error("mcpServers in " + file + " is not an object; left unchanged");
+                if (key) {
+                  cfg.mcpServers = cfg.mcpServers || {};
+                  cfg.mcpServers.linear = { type: "http", url: "https://mcp.linear.app/mcp", headers: { Authorization: "Bearer " + key } };
+                } else if (cfg.mcpServers && "linear" in cfg.mcpServers) {
+                  delete cfg.mcpServers.linear;
+                } else {
+                  console.error("Linear MCP: LINEAR_API_KEY not set, nothing to change");
+                  process.exit(0);
+                }
+                fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
+                const tmp = file + ".tmp-" + process.pid;
+                try {
+                  fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2) + "\n", { mode: 0o600, flag: "w" });
+                  fs.chmodSync(tmp, 0o600);
+                  fs.renameSync(tmp, file);
+                } catch (e) {
+                  try { fs.unlinkSync(tmp); } catch {}
+                  throw new Error("cannot write " + file + " (" + (e.code || "error") + ")");
+                }
+                console.error("Linear MCP: " + (key ? "configured" : "removed") + " in " + file);
+              ' || echo "warning: Linear MCP setup failed; starting without changing it" >&2
               exec /usr/bin/tini -- /usr/local/bin/paseo-docker-entrypoint
           ports:
             - name: http
@@ -151,6 +192,11 @@ spec:
           envFrom:
             - secretRef:
                 name: paseo-secrets
+            # LINEAR_API_KEY. Optional so a missing Infisical key only leaves
+            # agents without Linear instead of blocking the pod.
+            - secretRef:
+                name: paseo-linear
+                optional: true
           volumeMounts:
             - name: home
               mountPath: /home/paseo
