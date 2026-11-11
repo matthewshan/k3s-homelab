@@ -30,11 +30,31 @@ sync.
 |---|---|---|
 | `paseo-password` | env `PASEO_PASSWORD` | `openssl rand -base64 32`. Guards the API/WebSocket; the static UI stays public. |
 | `paseo-claude-code-oauth-token` | env `CLAUDE_CODE_OAUTH_TOKEN` | `claude setup-token` on a machine logged in to the Pro account. Acts as the whole Claude account: rotate if leaked. |
+| `paseo-linear-api-key` | env `LINEAR_API_KEY` (Secret `paseo-linear`) | Linear → Settings → Security & access → Personal API keys. Use a dedicated key just for Paseo so it can be revoked on its own. Optional: without it agents simply have no Linear tools. |
 | `paseo-github-app-private-key` | Secret `paseo-github-app`, **not** in the pod | The GitHub App's `.pem`, pasted whole. Only the ESO generator reads it. |
 
-Both env keys are readable by every agent. Env vars are read at pod start:
-after changing one, wait for the ExternalSecret refresh (1h, or annotate it to
-force) and restart the pod.
+All env keys are readable by every agent. The Linear key is the same accepted
+risk as the Claude token: it acts as you in Linear, so revoke it there if an
+agent may have leaked it. Env vars are read at pod start: after changing or
+rotating one, wait for the ExternalSecret refresh (1h, or annotate it to force)
+and restart the pod.
+
+### Linear MCP
+
+At start, the container merges a `linear` entry (`https://mcp.linear.app/mcp`,
+`Authorization: Bearer $LINEAR_API_KEY`) into the user-scope Claude config,
+`$CLAUDE_CONFIG_DIR/.claude.json` (`/home/paseo/.claude/.claude.json` on the
+PVC, mode 0600), keeping every other key; with no key it removes the entry. So
+every agent session gets Linear tools with no `claude mcp add`, and the key is
+also at rest in that file. A failure only logs `Linear MCP: …` and the daemon
+starts anyway (`kubectl -n paseo logs deploy/paseo | grep 'Linear MCP'`).
+
+`paseo-linear-api-key` has its own ExternalSecret, `paseo-linear`, consumed
+with `optional: true`: if the Infisical key is missing, only that
+ExternalSecret fails, and the password and Claude token keep refreshing.
+`/etc/claude-code/managed-mcp.json` is deliberately not used: a managed MCP
+file can take exclusive control of MCP servers and could block the `paseo` server
+the daemon injects.
 
 ### GitHub: App `5707698`, installation `180765222`
 
@@ -104,7 +124,7 @@ change its version and hash together; get the hash from the upstream release
 
 ## First-deploy checklist
 
-1. Infisical keys above created.
+1. Infisical keys above created (`paseo-linear-api-key` is optional).
 2. DNS: `paseo.mattshan.dev → 192.168.1.194` in AdGuard (see `docs/dns.md`).
 3. After sync:
    - `kubectl -n paseo get externalsecret,pod` → `SecretSynced`, pod `Running`.
@@ -122,11 +142,18 @@ change its version and hash together; get the hash from the upstream release
    - `https://paseo.mattshan.dev` loads; API calls fail without the password;
      an agent session streams (WebSocket through the gateway).
    - `gh auth status` and a `git push` to a scratch repo work.
+   - Linear: `kubectl -n paseo get externalsecret paseo-linear` is
+     `SecretSynced`, and `claude mcp list` in the pod shows `linear` connected.
    - Tools are read-only: `touch /opt/paseo-tools/bin/claude` fails; and a
      session in full-access mode is refused or downgraded (managed policy).
 4. Run one agent end to end on a scratch repo before adding real ones.
 
 ## Troubleshooting
+
+- **No Linear tools in a session**: `kubectl -n paseo logs deploy/paseo | grep 'Linear MCP'`.
+  "not set" means Secret `paseo-linear` was missing at pod start (check
+  `kubectl -n paseo describe externalsecret paseo-linear`, then restart the
+  pod); a 401 in `claude mcp list` means the key is wrong or revoked.
 
 - **Pod stuck in `Init`**: `kubectl -n paseo logs deploy/paseo -c install-tools`.
   A sha256 mismatch means the pinned version and hash disagree (or the download
