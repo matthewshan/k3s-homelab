@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paseo-home
+  namespace: paseo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi  # ~/.paseo, ~/.claude, installed CLIs, repo clones
+  storageClassName: longhorn

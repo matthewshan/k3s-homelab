@@ -1,0 +1,51 @@
+# Paseo agents run arbitrary commands on content they did not write, so this
+# pod may only reach what they need: DNS, the kube-apiserver (read-only RBAC)
+# and the public internet. Everything else is denied, including in-cluster
+# Services that rely on network position instead of auth (pc-broker can wake
+# and shut down the PC; Temporal; Langfuse) and LAN hosts (the Postgres VM,
+# the PC, AdGuard, gateway-internal). It is the first policy in the cluster;
+# it selects only the paseo pod, so nothing else changes.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: paseo
+  namespace: paseo
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: paseo
+  ingress:
+    # Only via gateway-internal (Cilium's Envoy carries the `ingress` identity).
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "6767"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+    # Read-only kubectl. With kube-proxy replacement the policy sees the
+    # translated backend, i.e. the apiserver's real port.
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    # Public internet only. `world` would include the LAN, so use CIDRs with
+    # every private, CGNAT and link-local range carved out.
+    - toCIDRSet:
+        - cidr: 0.0.0.0/0
+          except:
+            - 10.0.0.0/8
+            - 100.64.0.0/10
+            - 169.254.0.0/16
+            - 172.16.0.0/12
+            - 192.168.0.0/16

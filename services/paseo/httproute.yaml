@@ -1,0 +1,27 @@
+# Internal gateway only (LAN + Twingate `apps` resource), HTTPS listener only:
+# the daemon password must never cross the LAN in clear text.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: paseo-route
+  namespace: paseo
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - "paseo.mattshan.dev"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ''
+          kind: Service
+          name: paseo
+          port: 6767
+          weight: 1
