@@ -8,5 +8,5 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 20Gi  # ~/.paseo, ~/.claude, installed CLIs, repo clones
+      storage: 20Gi  # ~/.paseo, ~/.claude, repo clones (CLIs live in a read-only emptyDir)
   storageClassName: longhorn

@@ -42,7 +42,7 @@ Agents never hold a long-lived GitHub credential. `github-app.yaml` has ESO's
 `GithubAccessToken` generator mint a one-hour installation token every 30
 minutes into Secret `paseo-github-token`, mounted at `/var/run/github/token`.
 `git` (credential helper in `GIT_CONFIG_*`) and `gh` (a wrapper around
-`gh-bin`) read that file on every call, so refreshes need no restart and there
+the real binary) read that file on every call, so refreshes need no restart and there
 is nothing to rotate on a schedule.
 
 - **Repos:** whatever the App installation is granted (GitHub → Settings →
@@ -64,13 +64,36 @@ is nothing to rotate on a schedule.
 
 | Component | Pinned in | Notes |
 |---|---|---|
-| Paseo `0.15.4` (index digest) | `deployment.yaml`, both `paseo` images | Must stay `>= 0.5.0` (GHSA-2xhx-c69r-qj4j, relay E2EE bypass). |
-| Claude Code `2.1.322` | `install-claude-code` env | `DISABLE_AUTOUPDATER=1` keeps it pinned. |
-| kubectl `v1.35.10` + sha256 | `install-cli-tools` env | Stay within one minor of the k3s server. |
-| gh `2.103.3` | `install-cli-tools` env | Verified against the release's `checksums.txt`; installed as `gh-bin` behind the token-reading `gh` wrapper. |
+| Paseo `0.15.4` (index digest) | `deployment.yaml` | Must stay `>= 0.5.0` (GHSA-2xhx-c69r-qj4j, relay E2EE bypass). |
+| alpine `3.22` (index digest) | `install-tools` image | Only downloads and verifies; supported until 2027-05. |
+| Claude Code `2.1.322` + sha256 | `install-tools` env | Native `claude-code-linux-x64` tarball straight from the npm registry; no npm, no install scripts. |
+| kubectl `v1.35.10` + sha256 | `install-tools` env | Stay within one minor of the k3s server. |
+| gh `2.103.3` + sha256 | `install-tools` env | Behind a `gh` wrapper that reads the current App token. |
 
-The init containers install the CLIs onto the PVC and skip work when the
-recorded version matches, so a bump is an env change plus a pod restart.
+`install-tools` downloads all three on every pod start (~7s, ~400MB), checks
+each against its pinned sha256 and fails closed on any mismatch or missing
+hash, then puts them in an `emptyDir` that the daemon mounts **read-only** at
+`/opt/paseo-tools`. They deliberately never touch the PVC: agents can write
+there, and a swapped binary would run in every later session. To bump one,
+change its version and hash together; get the hash from the upstream release
+(`kubectl`: `<url>.sha256`; gh: `gh_<v>_checksums.txt`; Claude Code:
+`sha256sum` of the registry tarball after checking its `dist.integrity`).
+
+## Hardening beyond RBAC and the network policy
+
+- **Password required:** the upstream entrypoint only *warns* and then serves an
+  unauthenticated control API when `PASEO_PASSWORD` is empty; the container
+  command refuses to start unless it is at least 24 characters.
+- **Claude Code managed policy** (`claude-managed-settings.yaml`, read-only at
+  `/etc/claude-code`): no bypass-permissions ("full-access") sessions, and only
+  managed hooks run, so an agent cannot plant a hook in `~/.claude` or a repo
+  that fires in later sessions.
+- **Residual:** agents run as the same user as the daemon, so they can read the
+  daemon's env (password, Claude token), `~/.paseo` (including
+  `daemon-keypair.json`) and edit dotfiles on the PVC, and they have open
+  internet egress. Approvals are the control for that; if you suspect an agent
+  was prompt-injected, rotate `paseo-password` and the Claude token and wipe
+  the PVC (re-pair afterwards).
 
 ## Connecting
 
@@ -99,13 +122,17 @@ recorded version matches, so a bump is an env change plus a pod restart.
    - `https://paseo.mattshan.dev` loads; API calls fail without the password;
      an agent session streams (WebSocket through the gateway).
    - `gh auth status` and a `git push` to a scratch repo work.
+   - Tools are read-only: `touch /opt/paseo-tools/bin/claude` fails; and a
+     session in full-access mode is refused or downgraded (managed policy).
 4. Run one agent end to end on a scratch repo before adding real ones.
 
 ## Troubleshooting
 
-- **Pod stuck in `Init`**: `kubectl -n paseo logs deploy/paseo -c install-cli-tools`
-  (or `-c install-claude-code`). A checksum mismatch means the pinned version
-  and hash disagree; fix the pin, never drop the check.
+- **Pod stuck in `Init`**: `kubectl -n paseo logs deploy/paseo -c install-tools`.
+  A sha256 mismatch means the pinned version and hash disagree (or the download
+  was tampered with); fix the pin from upstream, never drop the check.
+- **Container exits at start with "refusing to start"**: `paseo-password` is
+  missing or too short in Infisical.
 - **Agents can't reach a host they need**: that host is either in-cluster or on
   the LAN and blocked on purpose. Add a narrow rule to `networkpolicy.yaml`
   (one endpoint, one port; for pc-broker an L7 rule for `POST /api/chat` only),

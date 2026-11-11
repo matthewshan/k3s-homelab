@@ -10,6 +10,7 @@ resources:
   - serviceaccount.yaml
   - clusterrolebinding.yaml
   - pvc.yaml
+  - claude-managed-settings.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
