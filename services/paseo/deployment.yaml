@@ -102,6 +102,103 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
+        # Postgres, ffmpeg and Chromium's system libraries, for agents that
+        # record browser flows (Playwright -> ffmpeg) against a throwaway local
+        # database. The daemon image is Debian/glibc, so Alpine's musl builds
+        # would not load: this runs the daemon's own image as uid 1000 and lets
+        # apt resolve against that image's dpkg database, so it fetches exactly
+        # what the daemon lacks. No root: apt only downloads (private state
+        # dirs) and dpkg-deb only unpacks; apt checks every package against the
+        # signed bookworm indexes. Unlike install-tools it never blocks the
+        # pod: on any failure it leaves no capture tools and the daemon starts.
+        - name: install-capture-tools
+          # Keep on the daemon's digest: the closure is computed against it.
+          image: ghcr.io/getpaseo/paseo:0.15.4@sha256:d9c05730c66a6b64a708303e7cfa6a4009f31f89507bf986fb5b098af25a1c3f
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CAPTURE_PACKAGES
+              value: >-
+                postgresql-15 ffmpeg
+                libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libatspi2.0-0
+                libcups2 libdbus-1-3 libdrm2 libxkbcommon0 libxcomposite1
+                libxdamage1 libxext6 libxfixes3 libxrandr2 libgbm1
+                libpango-1.0-0 libcairo2 libasound2 libx11-6 libxcb1
+                libglib2.0-0 fontconfig fonts-dejavu-core fonts-liberation
+                fonts-noto-color-emoji
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              T=/opt/paseo-tools
+              C="$T/capture"
+              mkdir -p "$T/bin"
+              set +e
+              (
+                set -euo pipefail
+                R="$C/root" A=/tmp/apt
+                mkdir -p "$A/lists/partial" "$A/archives/partial" "$R"
+                apt=(-q -o Dir::State::Lists="$A/lists" -o Dir::Cache="$A"
+                     -o Dir::Cache::archives="$A/archives" -o Debug::NoLocking=1
+                     -o APT::Sandbox::User="$(id -un)" -o Acquire::Retries=3
+                     -o APT::Install-Recommends=false)
+                apt-get "${apt[@]}" --error-on=any update
+                # Unquoted on purpose: one word per package.
+                apt-get "${apt[@]}" install --download-only -y $CAPTURE_PACKAGES
+                for deb in "$A"/archives/*.deb; do
+                  pkg="$(dpkg-deb -f "$deb" Package)"
+                  # A newer copy of something the image already has (say libc6
+                  # after a point release) would shadow it via LD_LIBRARY_PATH.
+                  if dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q 'ok installed'; then
+                    echo "$pkg is already in the image; bump the Paseo image" >&2
+                    exit 1
+                  fi
+                  dpkg-deb -x "$deb" "$R"
+                done
+                rm -rf "$R/usr/share/doc" "$R/usr/share/man" "$R/usr/share/info"
+                # Re-point absolute symlinks (fontconfig's conf.d, ...) into the
+                # unpacked tree instead of the image.
+                cd "$R"
+                find . -type l -lname '/*' | while read -r l; do
+                  t="$(readlink "$l")"
+                  if [ -e "$R$t" ]; then ln -sfn "$R$t" "$l"; fi
+                done
+                sed -i "s|<dir>/usr/share/fonts</dir>|<dir>$R/usr/share/fonts</dir>|" "$R/etc/fonts/fonts.conf"
+                # The libraries apply only to what runs under capture-env, never
+                # to the daemon. blas/lapack/pulseaudio are normally wired up by
+                # maintainer scripts, which never run here.
+                L="$R/usr/lib/x86_64-linux-gnu"
+                printf '%s\n' '#!/bin/sh' \
+                  "[ -d $R ] || { echo 'no capture tools: kubectl -n paseo logs deploy/paseo -c install-capture-tools' >&2; exit 127; }" \
+                  "export LD_LIBRARY_PATH=\"$L:$R/lib/x86_64-linux-gnu:$L/pulseaudio:$L/blas:$L/lapack\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}\"" \
+                  "export FONTCONFIG_PATH=$R/etc/fonts" \
+                  'exec "$@"' > "$T/bin/capture-env"
+                chmod 0555 "$T/bin/capture-env"
+                for b in "$R/usr/bin/ffmpeg" "$R/usr/bin/ffprobe" "$R"/usr/lib/postgresql/15/bin/*; do
+                  printf '%s\n' '#!/bin/sh' "exec $T/bin/capture-env $b \"\$@\"" > "$T/bin/${b##*/}"
+                  chmod 0555 "$T/bin/${b##*/}"
+                done
+              )
+              rc=$?
+              rm -rf /tmp/apt
+              if [ "$rc" -ne 0 ]; then
+                # Any wrapper left behind fails with a pointer to these logs.
+                echo "capture tools not installed (exit $rc); starting without them" >&2
+                rm -rf "$C"
+              fi
+              exit 0
+          volumeMounts:
+            - name: tools
+              mountPath: /opt/paseo-tools
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
       containers:
         - name: paseo
           # >= 0.5.0 is required: GHSA-2xhx-c69r-qj4j (relay E2EE bypass).
@@ -174,13 +271,17 @@ spec:
               path: /api/health
               port: http
             periodSeconds: 10
+          # A flow capture (Next dev server + Postgres + headless Chromium +
+          # ffmpeg) peaks near 4Gi. The request stays low: the node has 8Gi and
+          # its pods already request ~5Gi, so requesting 4Gi would leave this
+          # pod Pending (and Recreate means the old one is already gone).
           resources:
             requests:
               cpu: 250m
-              memory: 512Mi
+              memory: 1Gi
             limits:
               cpu: "1"
-              memory: 2Gi
+              memory: 4Gi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -190,8 +291,9 @@ spec:
           persistentVolumeClaim:
             claimName: paseo-home
         - name: tools
+          # ~400MB of CLIs + ~650MB of capture tools. Exceeding it evicts the pod.
           emptyDir:
-            sizeLimit: 1Gi
+            sizeLimit: 2Gi
         - name: claude-managed-settings
           configMap:
             name: claude-managed-settings

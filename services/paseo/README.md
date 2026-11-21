@@ -64,11 +64,12 @@ is nothing to rotate on a schedule.
 
 | Component | Pinned in | Notes |
 |---|---|---|
-| Paseo `0.15.4` (index digest) | `deployment.yaml` | Must stay `>= 0.5.0` (GHSA-2xhx-c69r-qj4j, relay E2EE bypass). |
+| Paseo `0.15.4` (index digest) | `deployment.yaml` (twice) | Must stay `>= 0.5.0` (GHSA-2xhx-c69r-qj4j, relay E2EE bypass). Also the `install-capture-tools` image: bump both together. |
 | alpine `3.22` (index digest) | `install-tools` image | Only downloads and verifies; supported until 2027-05. |
 | Claude Code `2.1.322` + sha256 | `install-tools` env | Native `claude-code-linux-x64` tarball straight from the npm registry; no npm, no install scripts. |
 | kubectl `v1.35.10` + sha256 | `install-tools` env | Stay within one minor of the k3s server. |
 | gh `2.103.3` + sha256 | `install-tools` env | Behind a `gh` wrapper that reads the current App token. |
+| Postgres 15, ffmpeg, Chromium libs | `install-capture-tools` env | Debian bookworm packages, signature-checked, not version-pinned. See below. |
 
 `install-tools` downloads all three on every pod start (~7s, ~400MB), checks
 each against its pinned sha256 and fails closed on any mismatch or missing
@@ -78,6 +79,53 @@ there, and a swapped binary would run in every later session. To bump one,
 change its version and hash together; get the hash from the upstream release
 (`kubectl`: `<url>.sha256`; gh: `gh_<v>_checksums.txt`; Claude Code:
 `sha256sum` of the registry tarball after checking its `dist.integrity`).
+
+## Capture tools (Postgres, ffmpeg, Chromium libraries)
+
+For agents that record browser flows as GIFs (Playwright → ffmpeg) against a
+throwaway local database. `install-capture-tools` runs the **daemon's own
+image** (same digest) as uid 1000: apt resolves `CAPTURE_PACKAGES` against
+that image's dpkg database, downloads only what it lacks (~190MB) and
+`dpkg-deb -x` unpacks it under `/opt/paseo-tools/capture/root` (~650MB) in the
+same read-only `emptyDir`. No root and no maintainer scripts. Why not
+`install-tools`: Alpine's musl builds do not load in the Debian/glibc daemon.
+Why not a custom image: this repo builds none (the `ghcr.io/matthewshan/*`
+images come from each app's own repo), so a Paseo derivative would need a new
+repo, CI and a rebuild on every Paseo bump.
+
+- **Integrity, not pinning:** apt verifies every package against the signed
+  bookworm (+ security) indexes and the debian-archive-keyring in the image,
+  so tampering fails. Versions float within bookworm, so pod starts pick up
+  Debian security fixes. Bump the second Paseo digest with the first.
+- **Libraries stay out of the daemon:** nothing sets `LD_LIBRARY_PATH`
+  globally. `/opt/paseo-tools/bin/capture-env <cmd>` sets it (plus
+  `FONTCONFIG_PATH`) for one command; `ffmpeg`, `ffprobe` and the Postgres 15
+  binaries (`initdb`, `pg_ctl`, `psql`, …) are wrappers that go through it.
+  It refuses to unpack a newer copy of a package the image already has, since
+  that copy would shadow the image's.
+- **Never blocks the pod:** on any failure (Debian mirror down, unknown
+  package, the shadow check) it logs, removes the capture tree and exits 0.
+  The daemon starts; the wrappers then point at the init logs.
+- **Cost:** ~35s and ~190MB download on every pod start. There is no cache on
+  the PVC for the same reason as `install-tools`.
+
+Usage from an agent (Postgres on localhost only; its data lives on the PVC):
+
+```sh
+npx playwright install chromium          # once; browser goes to ~/.cache
+export PGDATA=$HOME/.local/share/capture-pg
+[ -d "$PGDATA" ] || initdb -U postgres --auth=trust -E UTF8 --locale=C.UTF-8
+pg_ctl -l "$PGDATA/log" -o "-k /tmp -c listen_addresses=localhost" -w start
+createdb -h localhost -U postgres herd   # DATABASE_URL=postgresql://postgres@localhost:5432/herd
+capture-env pnpm capture:visual          # Chromium needs capture-env's libraries
+pg_ctl -m fast stop
+```
+
+`-k /tmp` is required: Debian's default socket directory
+`/var/run/postgresql` does not exist here. Memory: the daemon's limit is 4Gi
+for this (dev server + Postgres + Chromium + ffmpeg), but its request is only
+1Gi because the single 8Gi node cannot reserve more. A capture running while
+the node is busy can push it into memory pressure.
 
 ## Hardening beyond RBAC and the network policy
 
@@ -124,6 +172,8 @@ change its version and hash together; get the hash from the upstream release
    - `gh auth status` and a `git push` to a scratch repo work.
    - Tools are read-only: `touch /opt/paseo-tools/bin/claude` fails; and a
      session in full-access mode is refused or downgraded (managed policy).
+   - Capture tools: `ffmpeg -version` and `initdb --version` print versions;
+     `ls /opt/paseo-tools/capture` is not empty.
 4. Run one agent end to end on a scratch repo before adding real ones.
 
 ## Troubleshooting
@@ -131,6 +181,11 @@ change its version and hash together; get the hash from the upstream release
 - **Pod stuck in `Init`**: `kubectl -n paseo logs deploy/paseo -c install-tools`.
   A sha256 mismatch means the pinned version and hash disagree (or the download
   was tampered with); fix the pin from upstream, never drop the check.
+- **`ffmpeg`/`initdb` say "no capture tools"**: `install-capture-tools`
+  failed and the pod started without them; `kubectl -n paseo logs deploy/paseo
+  -c install-capture-tools` says why. "already in the image" means a Debian
+  update needs a newer Paseo image; the rest is usually the mirror (restart the
+  pod).
 - **Container exits at start with "refusing to start"**: `paseo-password` is
   missing or too short in Infisical.
 - **Agents can't reach a host they need**: that host is either in-cluster or on
