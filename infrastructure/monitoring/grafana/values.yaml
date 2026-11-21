@@ -154,6 +154,51 @@ applicationObservability:
 
 alloy-metrics:
   enabled: true
+  # LAN dependency probes. Pod health alone misses outages of things outside
+  # the cluster (e.g. herd-scheduler stayed Running for 9+ days while its
+  # Postgres VM was off). Emits probe_success{probe_target="..."}; alerting
+  # on it lives in Grafana Cloud — see README.md "LAN probes".
+  # Note: the chart runs this through `tpl`, so never use double curly braces.
+  extraConfig: |
+    prometheus.exporter.blackbox "lan" {
+      config = `
+    modules:
+      tcp_connect:
+        prober: tcp
+        timeout: 5s
+    `
+
+      target {
+        name    = "postgres_vm"
+        address = "192.168.1.178:5432"
+        module  = "tcp_connect"
+      }
+    }
+
+    discovery.relabel "lan_probes" {
+      targets = prometheus.exporter.blackbox.lan.targets
+
+      rule {
+        source_labels = ["__param_target"]
+        target_label  = "probe_address"
+      }
+
+      rule {
+        source_labels = ["job"]
+        regex         = ".*/([^/]+)$"
+        target_label  = "probe_target"
+      }
+    }
+
+    prometheus.scrape "lan_probes" {
+      targets         = discovery.relabel.lan_probes.output
+      forward_to      = [prometheus.remote_write.grafana_cloud_metrics.receiver]
+      scrape_interval = "60s"
+
+      clustering {
+        enabled = true
+      }
+    }
   remoteConfig:
     enabled: true
     url: https://fleet-management-prod-008.grafana.net
