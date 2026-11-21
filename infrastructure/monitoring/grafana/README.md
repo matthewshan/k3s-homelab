@@ -73,3 +73,21 @@ When changing a drop rule, the recommended pre-merge flow is:
 5. Open the PR; CI re-runs the same task.
 
 `alloy fmt` only catches syntax. Logic errors (a regex matching more than you intended) must be caught with the `logcli` dry-run in step 4.
+
+## LAN probes
+
+`alloy-metrics.extraConfig` in `values.yaml` runs an Alloy blackbox exporter that checks, every 60s, that things outside the cluster are reachable from inside it. Pod health can't see these outages: herd-scheduler stayed `Running` for 9+ days in Nov 2026 while its Postgres VM was off.
+
+| `probe_target` | Address | Check | Who depends on it |
+|---|---|---|---|
+| `postgres_vm` | `192.168.1.178:5432` | TCP connect | herd-scheduler |
+
+To add a target, add another `target { name, address, module }` block. Use `tcp_connect` for ports; for HTTP add an `http_2xx` module (`prober: http`) to the inline blackbox config. The chart passes `extraConfig` through Helm `tpl`, so never use double curly braces in it.
+
+Each target produces `probe_success{probe_target="<name>", probe_address="<host:port>"}` (1 = up, 0 = down) in Grafana Cloud Prometheus. The alert rule lives in Grafana Cloud (Alerting → Alert rules), not in this repo:
+
+```promql
+max by (probe_target, probe_address) (probe_success{probe_target!=""}) == 0
+```
+
+Pending period 5m. Also enable "Alert state if no data: Alerting", so the alert also fires if the probe itself stops reporting.
